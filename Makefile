@@ -7,8 +7,6 @@
 
 NAME = raytracer
 
-SEVER_SRC = server/*.c
-
 all:
 	cargo build
 
