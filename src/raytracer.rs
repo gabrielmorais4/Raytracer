@@ -19,25 +19,35 @@ use crate::math::{Point3D, Vector3D};
         }
     }
     pub struct Sphere {
-        center: Point3D,
-        radius: f64
+        pub center: Point3D,
+        pub radius: f64,
+        pub color: Vector3D,
     }
     impl Default for Sphere {
         fn default() -> Sphere {
-            Sphere { center: Point3D::default(), radius: 0.0 }
+            Sphere { center: Point3D::default(), radius: 0.0, color: Vector3D::default() }
         }
     }
     impl Sphere {
-        pub fn new(center: Point3D, radius: f64) -> Sphere {
-            Sphere { center, radius }
+        pub fn new(center: Point3D, radius: f64, color: Vector3D) -> Sphere {
+            Sphere { center, radius, color }
         }
         pub fn hits(&self, ray: Ray) -> bool {
             let oc = ray.origin - self.center;
-            let a = ray.direction.length();
-            let half_b = oc.dot(ray.direction);
-            let c = oc.length() - self.radius * self.radius;
-            let discriminant = half_b * half_b - a * c;
-            discriminant > 0.0
+            let a = ray.direction.dot(&ray.direction);
+            let b = 2.0 * oc.dot(&ray.direction);
+            let c = oc.dot(&oc) - self.radius.powi(2);
+            let discriminant = b.powi(2) - 4.0 * a * c;
+            if discriminant < 0.0 {
+                return false;
+            }
+            let sqrt_discriminant = discriminant.sqrt();
+            let t1 = (-b - sqrt_discriminant) / (2.0 * a);
+            let t2 = (-b + sqrt_discriminant) / (2.0 * a);
+            if t1 < 0.0 && t2 < 0.0 {
+                return false;
+            }
+            true
         }
     }
     pub struct Rectangle3D {

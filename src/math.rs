@@ -21,7 +21,7 @@
         pub fn length(&self) -> f64 {
             (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
         }
-        pub fn dot(&self, other: Vector3D) -> f64 {
+        pub fn dot(&self, other: &Self) -> f64 {
             self.x * other.x + self.y * other.y + self.z * other.z
         }
         pub fn get_color(&self) -> (u8, u8, u8) {
