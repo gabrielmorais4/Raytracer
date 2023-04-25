@@ -5,3 +5,6 @@ target/debug/*
 target/debug/.fingerprint/*
 result.ppm
 result copy.ppm
+raytracer
+*.ppm
+.idea/

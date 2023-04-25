@@ -9,6 +9,7 @@ NAME = raytracer
 
 all:
 	cargo build
+	mv ./target/debug/$(NAME) .
 
 run:
 	cargo run
