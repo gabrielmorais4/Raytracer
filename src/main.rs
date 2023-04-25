@@ -12,12 +12,17 @@ fn write_color(color: Vector3D) {
 
 fn main() {
     let cam = Camera::default();
-    let s = Sphere::new(Point3D::new(0.5, 0.5, 0.0), 0.5);
-    println!("P3\n400 400\n255");
-    for _y in 1..400 {
-        for _x in 1..400 {
-            let u = (_x * 1) as f64 / 400.0;
-            let v = (_y * 1) as f64 / 400.0;
+    let s = Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5);
+    let width = 400;
+    let height = 400;
+    println!("P3\n{}\n{}\n{}", width, height, 255);
+    let mut toto = height - 1;
+    let mut toto2 = width - 1;
+    for _y in 0..height {
+        for _x in 0..width {
+            let u = (toto2 * 1) as f64 / (width - 1) as f64;
+            let v = (toto * 1) as f64 / (height - 1) as f64;
+            toto2 = toto2 - 1;
             let r:Ray = cam.ray(u, v);
             if s.hits(r) {
                 write_color(Vector3D::new(255.0, 0.0, 0.0));
@@ -25,5 +30,7 @@ fn main() {
                 write_color(Vector3D::new(0.0, 0.0, 255.0));
             }
         }
+        toto2 = width - 1;
+        toto = toto - 1;
     }
 }

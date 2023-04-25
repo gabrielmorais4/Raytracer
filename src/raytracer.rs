@@ -41,13 +41,13 @@ use crate::math::{Point3D, Vector3D};
         }
     }
     pub struct Rectangle3D {
-        origin: Point3D, // the bottom-left corner of the rectangle
+        origin: Point3D,
         bottom_side: Vector3D,
         left_side: Vector3D
     }
     impl Default for Rectangle3D {
         fn default() -> Rectangle3D {
-            Rectangle3D { origin: Point3D::default(), bottom_side: Vector3D::new(1.0, 0.0, 0.0), left_side: Vector3D::new(0.0, 1.0, 0.0) }
+            Rectangle3D { origin: Point3D::new(-1.0, -1.0, -1.0), bottom_side: Vector3D::new(1.0, 0.0, 0.0), left_side: Vector3D::new(0.0, 1.0, 0.0) }
         }
     }
     impl Rectangle3D {
@@ -55,12 +55,16 @@ use crate::math::{Point3D, Vector3D};
             Rectangle3D { origin, bottom_side, left_side }
         }
         pub fn point_at(&self, u: f64, v: f64) -> Point3D {
-             self.bottom_side * (self.origin + u) + (self.left_side * v)
+            let p0 = self.origin;
+            let v1 = self.bottom_side;
+            let v2 = self.left_side;
+
+            p0 + v1.scale(u) + v2.scale(v)
         }
     }
     pub struct Camera {
-        origin: Point3D,
-        screen: Rectangle3D
+        pub origin: Point3D,
+        pub screen: Rectangle3D
     }
     impl Default for Camera {
         fn default() -> Camera {
@@ -72,6 +76,6 @@ use crate::math::{Point3D, Vector3D};
             Camera { origin, screen }
         }
         pub fn ray(&self, u: f64, v: f64) -> Ray {
-            Ray::new(self.origin, self.screen.point_at(u, v) - self.origin)
+            Ray::new(self.origin, (self.screen.point_at(u, v) - self.origin).normalize())
         }
     }

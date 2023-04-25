@@ -1,0 +1,7 @@
+target/*
+target
+target/
+target/debug/*
+target/debug/.fingerprint/*
+result.ppm
+result copy.ppm

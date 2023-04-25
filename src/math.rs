@@ -1,10 +1,10 @@
     use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign};
 
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Debug)]
     pub struct Vector3D {
-        x: f64,
-        y: f64,
-        z: f64,
+       pub x: f64,
+       pub y: f64,
+       pub z: f64,
     }
     impl Default for Vector3D {
         fn default() -> Vector3D {
@@ -29,6 +29,17 @@
             let g = (255.0 * self.y) as u8;
             let b = (255.0 * self.z) as u8;
             (r, g, b)
+        }
+        pub fn normalize(&self) -> Vector3D {
+            let len = self.length();
+            Vector3D {
+                x: self.x / len,
+                y: self.y / len,
+                z: self.z / len,
+            }
+        }
+        pub fn scale(&self, s: f64) -> Vector3D {
+            Vector3D { x: self.x * s, y: self.y * s, z: self.z * s }
         }
     }
     impl Add<Vector3D> for Vector3D {
@@ -143,11 +154,11 @@
             }
         }
     }
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Debug)]
     pub struct Point3D {
-        x: f64,
-        y: f64,
-        z: f64,
+        pub x: f64,
+        pub y: f64,
+        pub z: f64,
     }
     impl Default for Point3D {
         fn default() -> Point3D {
