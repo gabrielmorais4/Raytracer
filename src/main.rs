@@ -3,7 +3,7 @@ mod math;
 
 use math::{Point3D, Vector3D};
 
-use crate::raytracer::{Camera, Sphere, Ray};
+use crate::raytracer::{Camera, Sphere, Ray, Rectangle3D};
 
 fn write_color(color: Vector3D) {
     let color = color.get_color();
@@ -11,8 +11,8 @@ fn write_color(color: Vector3D) {
 }
 
 fn main() {
-    let cam = Camera::default();
-    let s = Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5);
+    let cam = Camera::new(Point3D::new(0.0, 0.0, 0.0), Rectangle3D::default());
+    let s = Sphere::new(Point3D::new(-0.3, -0.2, -1.0), 0.1);
     let width = 400;
     let height = 400;
     println!("P3\n{}\n{}\n{}", width, height, 255);
