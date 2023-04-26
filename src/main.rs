@@ -6,7 +6,7 @@ use math::{Point3D, Vector3D};
 
 use object::{Object, Sphere, Plane};
 
-use crate::raytracer::{Camera, Ray, Rectangle3D, Scene, Light};
+use crate::raytracer::{Camera, Rectangle3D, Scene, Light};
 
 fn main() {
     let cam = Camera::new(
