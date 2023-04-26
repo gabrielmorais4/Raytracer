@@ -1,9 +1,12 @@
 mod raytracer;
 mod math;
+mod object;
 
 use math::{Point3D, Vector3D};
 
-use crate::raytracer::{Camera, Sphere, Plane, Ray, Rectangle3D, Scene, Object, Light};
+use object::{Object, Sphere, Plane};
+
+use crate::raytracer::{Camera, Ray, Rectangle3D, Scene, Light};
 
 fn main() {
     let cam = Camera::new(
@@ -15,7 +18,7 @@ fn main() {
         ),
     );
     let mut objects: Vec<Box<dyn Object>> = vec![
-        Box::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.3, Vector3D::new(255.0, 0.0, 0.0))),
+        Box::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.3, Vector3D::new(0.0, 100.0, 100.0))),
     ];
     let mut lights = vec![
         Light::default()
