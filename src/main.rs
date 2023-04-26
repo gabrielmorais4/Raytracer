@@ -17,10 +17,10 @@ fn main() {
             Vector3D::new(0.0, 1.0, 0.0),
         ),
     );
-    let mut objects: Vec<Box<dyn Object>> = vec![
+    let objects: Vec<Box<dyn Object>> = vec![
         Box::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.3, Vector3D::new(0.0, 100.0, 100.0))),
     ];
-    let mut lights = vec![
+    let lights = vec![
         Light::default()
     ];
     let plane = Plane::default();
