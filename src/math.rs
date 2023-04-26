@@ -10,12 +10,13 @@ impl Default for Vector3D {
         Vector3D { x: 0.0, y: 0.0, z: 0.0 }
     }
 }
+
 impl Vector3D {
     pub fn new(x: f64, y: f64, z: f64) -> Vector3D {
         Vector3D { x, y, z }
     }
-    pub fn from(other: Vector3D) -> Vector3D {
-        std::mem::replace(&mut Vector3D { x: 0.0, y: 0.0, z: 0.0 }, other)
+    pub fn from(other: &Vector3D) -> Vector3D {
+        other.clone()
     }
     pub fn length(&self) -> f64 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
@@ -168,8 +169,8 @@ impl Point3D {
     pub fn new(x: f64, y: f64, z: f64) -> Point3D {
         Point3D { x, y, z }
     }
-    pub fn from(other: Point3D) -> Point3D {
-        std::mem::replace(&mut Point3D { x: 0.0, y: 0.0, z: 0.0 }, other)
+    pub fn from(other: &Point3D) -> Point3D {
+        other.clone()
     }
 }
 impl Add<Vector3D> for Point3D {
