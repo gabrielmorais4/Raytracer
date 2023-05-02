@@ -1,5 +1,6 @@
 use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign};
-#[derive(Copy, Clone, Debug)]
+use serde::{Serialize, Deserialize};
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub struct Vector3D {
    pub x: f64,
    pub y: f64,
@@ -154,7 +155,7 @@ impl Mul<Point3D> for Vector3D {
         }
     }
 }
-#[derive(Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub struct Point3D {
     pub x: f64,
     pub y: f64,
