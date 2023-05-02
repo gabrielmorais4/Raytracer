@@ -74,7 +74,6 @@ pub struct Plane {
 
 impl Default for Plane {
     fn default() -> Plane {
-        // Plane { axis: String::from("x"), position: 0, normal: Vector3D::default(), color: Vector3D::default() }
         Plane { origin: Point3D::default(), normal: Vector3D::default(), color: Vector3D::default() }
     }
 }
