@@ -81,6 +81,23 @@ impl Plane {
             Plane { origin: Point3D::new(0.0, 0.0, position as f64), normal: Vector3D::new(0.0, 0.0, -1.0), color }
         }
     }
+    pub fn rotate(&mut self, axis: String, angle: f64) {
+        let mut new_normal = Vector3D::default();
+        if axis == "X" {
+            new_normal.x = self.normal.x;
+            new_normal.y = self.normal.y * angle.cos() - self.normal.z * angle.sin();
+            new_normal.z = self.normal.y * angle.sin() + self.normal.z * angle.cos();
+        } else if axis == "Y" {
+            new_normal.x = self.normal.x * angle.cos() + self.normal.z * angle.sin();
+            new_normal.y = self.normal.y;
+            new_normal.z = -self.normal.x * angle.sin() + self.normal.z * angle.cos();
+        } else {
+            new_normal.x = self.normal.x * angle.cos() - self.normal.y * angle.sin();
+            new_normal.y = self.normal.x * angle.sin() + self.normal.y * angle.cos();
+            new_normal.z = self.normal.z;
+        }
+        self.normal = new_normal;
+    }
 }
 impl Object for Plane {
     fn hits(&self, ray: Ray) -> HitResult {
