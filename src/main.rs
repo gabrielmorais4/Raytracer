@@ -4,6 +4,8 @@ mod object;
 mod light;
 
 use math::{Point3D, Vector3D};
+use serde_json::Value;
+use std::env;
 
 use object::{Object, Sphere, Plane};
 
@@ -32,5 +34,59 @@ fn main() {
     let mut scene = Scene::new(cam, objects, light, plane, width, height);
     println!("P3\n{}\n{}\n{}", width, height, 255);
     scene.render();
+}
+
+
+
+fn parse_width_height(json: &Value) -> Result<(u32, u32), Box<dyn std::error::Error>> {
+    let camera_json = json
+        .get("camera")
+        .ok_or_else(|| "Camera configuration not found in JSON")?;
+
+    let resolution_json = camera_json
+        .get("resolution")
+        .ok_or_else(|| "Camera resolution not found in JSON")?;
+    let width = u32::try_from(resolution_json["width"].as_u64().unwrap_or_default())?;
+    let height = u32::try_from(resolution_json["height"].as_u64().unwrap_or_default())?;
+    Ok((width, height))
+}
+
+fn parse_camera(json: &Value) -> Result<Camera, Box<dyn std::error::Error>> {
+    let camera_json = json
+        .get("camera")
+        .ok_or_else(|| "Camera configuration not found in JSON")?;
+
+    let resolution_json = camera_json
+        .get("resolution")
+        .ok_or_else(|| "Camera resolution not found in JSON")?;
+    let width = resolution_json["width"].as_u64().unwrap_or_default();
+    let height: u64 = resolution_json["height"].as_u64().unwrap_or_default();
+
+    let position_json = camera_json
+        .get("position")
+        .ok_or_else(|| "Camera position not found in JSON")?;
+    let x = position_json["x"].as_f64().unwrap_or_default();
+    let y = position_json["y"].as_f64().unwrap_or_default();
+    let z = position_json["z"].as_f64().unwrap_or_default();
+    let origin = Point3D { x, y, z };
+
+    let rotation_json = camera_json
+        .get("rotation")
+        .ok_or_else(|| "Camera rotation not found in JSON")?;
+    let field_of_view = camera_json["fieldOfView"].as_f64().unwrap_or_default();
+
+    let screen: Rectangle3D =         Rectangle3D::new(
+        Point3D::new(-0.5, -0.5, -1.0),
+        Vector3D::new(1.0, 0.0, 0.0),
+        Vector3D::new(0.0, 1.0, 0.0),
+    );
+
+    let camera = Camera {
+        origin,
+        screen,
+        field_of_view,
+    };
+
+    Ok(camera)
 }
 

@@ -1,9 +1,11 @@
 use crate::{math::{Point3D, Vector3D}, raytracer::Ray};
+use serde::{Serialize, Deserialize};
 #[derive(PartialEq)]
 pub enum HitResult {
     Hit,
     Missed,
 }
+
 
 pub trait Object {
     fn hits(&self, ray: Ray) -> Option<Point3D>;
@@ -12,7 +14,13 @@ pub trait Object {
     fn get_color(&self) -> Vector3D;
     fn get_albedo(&self, hit_point: &Point3D, light_dir: &Vector3D) -> Vector3D;
 }
-#[derive(Copy, Clone, Debug)]
+use std::fmt::{self, Debug};
+impl Debug for dyn Object {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Sphere {
     pub center: Point3D,
     pub radius: f64,
@@ -64,7 +72,7 @@ impl Object for Sphere {
         self.color * factor
     }
 }
-
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Plane {
     // pub axis: String,
     // pub position: i32,
@@ -75,7 +83,6 @@ pub struct Plane {
 
 impl Default for Plane {
     fn default() -> Plane {
-        // Plane { axis: String::from("x"), position: 0, normal: Vector3D::default(), color: Vector3D::default() }
         Plane { origin: Point3D::default(), normal: Vector3D::default(), color: Vector3D::default() }
     }
 }
@@ -89,6 +96,23 @@ impl Plane {
         } else {
             Plane { origin: Point3D::new(0.0, 0.0, position as f64), normal: Vector3D::new(0.0, 0.0, -1.0), color }
         }
+    }
+    pub fn rotate(&mut self, axis: String, angle: f64) {
+        let mut new_normal = Vector3D::default();
+        if axis == "X" {
+            new_normal.x = self.normal.x;
+            new_normal.y = self.normal.y * angle.cos() - self.normal.z * angle.sin();
+            new_normal.z = self.normal.y * angle.sin() + self.normal.z * angle.cos();
+        } else if axis == "Y" {
+            new_normal.x = self.normal.x * angle.cos() + self.normal.z * angle.sin();
+            new_normal.y = self.normal.y;
+            new_normal.z = -self.normal.x * angle.sin() + self.normal.z * angle.cos();
+        } else {
+            new_normal.x = self.normal.x * angle.cos() - self.normal.y * angle.sin();
+            new_normal.y = self.normal.x * angle.sin() + self.normal.y * angle.cos();
+            new_normal.z = self.normal.z;
+        }
+        self.normal = new_normal;
     }
 }
 impl Object for Plane {
