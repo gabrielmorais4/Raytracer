@@ -26,9 +26,9 @@ impl Vector3D {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
     pub fn get_color(&self) -> (u8, u8, u8) {
-        let r = (255.0 * self.x) as u8;
-        let g = (255.0 * self.y) as u8;
-        let b = (255.0 * self.z) as u8;
+        let r = (self.x) as u8;
+        let g = (self.y) as u8;
+        let b = (self.z) as u8;
         (r, g, b)
     }
     pub fn normalize(&self) -> Vector3D {
@@ -155,7 +155,7 @@ impl Mul<Point3D> for Vector3D {
         }
     }
 }
-#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct Point3D {
     pub x: f64,
     pub y: f64,

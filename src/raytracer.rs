@@ -1,3 +1,4 @@
+use crate::light::{Light, DirectionalLight};
 use crate::math::{Point3D, Vector3D};
 use crate::object::{Object, Sphere, Plane, HitResult};
 use serde::{Serialize, Deserialize};
@@ -20,25 +21,7 @@ impl Ray {
         std::mem::replace(&mut Ray {origin: Point3D::default(), direction: Vector3D::default()}, other)
     }
 }
-#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 
-pub struct Light {
-    pub direction: Vector3D,
-    pub color: Vector3D,
-    pub intensity: f32,
-}
-
-impl Default for Light {
-    fn default() -> Light {
-        Light { direction: Vector3D::default(), color: Vector3D::default(), intensity: 0.0 }
-    }
-}
-
-impl Light {
-    pub fn new(direction: Vector3D, color: Vector3D, intensity: f32) -> Light {
-        Light { direction, color, intensity }
-    }
-}
 #[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub struct Rectangle3D {
     origin: Point3D,
@@ -86,25 +69,25 @@ pub struct Scene {
     pub height: u32,
     pub camera: Camera, // camera of the scene
     pub objects: Vec<Box<dyn Object>>, // list of Objects
-    pub lights: Vec<Light>, // list of Lights
+    pub lights: Box<dyn Light>, // list of Lights
     pub plane: Plane // plane of the scene
 }
 
 impl Default for Scene {
     fn default() -> Scene {
-        Scene { camera: Camera::default(), objects: Vec::new(), lights: Vec::new(), plane: Plane::default(), width: 0, height: 0 }
+        Scene { camera: Camera::default(), objects: Vec::new(), lights: Box::new(DirectionalLight::default()), plane: Plane::default(), width: 0, height: 0 }
     }
 }
 
 impl Scene {
-    pub fn new(camera: Camera, objects: Vec<Box<dyn Object>>, lights: Vec<Light>, plane: Plane, width: u32, height: u32) -> Scene {
+    pub fn new(camera: Camera, objects: Vec<Box<dyn Object>>, lights: Box<dyn Light>, plane: Plane, width: u32, height: u32) -> Scene {
         Scene { camera, objects, lights, plane, width, height }
     }
     pub fn add_object(&mut self, object: Box<dyn Object>) {
         self.objects.push(object);
     }
-    pub fn add_light(&mut self, light: Light) {
-        self.lights.push(light);
+    pub fn add_light(&mut self, light: Box<dyn Light>) {
+        self.lights = light;
     }
     pub fn add_plane(&mut self, plane: Plane) {
         self.plane = plane;
@@ -117,6 +100,39 @@ impl Scene {
         let color = color.get_color();
         println!("{} {} {}", color.0, color.1, color.2);
     }
+    pub fn compute_lighting_directional(object: &Box<dyn Object>, light: &Box<dyn Light>, hit_point: &Point3D, ray: &Ray) -> Vector3D {
+        // let normal = object.surface_normal(hit_point);
+        // let direction_to_light = (light.get_direction().normalize()) * (-1.0);
+        // let light_intensity = light.get_intensity();
+        // let diffuse_factor = normal.dot(&direction_to_light).max(0.0);
+        // let diffuse_color = object.get_color() * light.get_color() * diffuse_factor;
+        // let ambient_color = object.get_color() * light.get_color() * 0.3; // 10% of light color as ambient color
+        // println!("diffuse color: {:?},  anmbiant  color: {:?}", diffuse_color, ambient_color);
+        // let total_color = diffuse_color * light_intensity + ambient_color;
+        // println!("totla color: {:?}", total_color);
+        // total_color
+        // println!("hit_point: {:?}", hit_point);
+        // println!("normal: {:?}", normal);
+        // let surface_normal = intersection.element.surface_normal(&hit_point);
+        // 2EME VERSION
+        // let normal = object.surface_normal(hit_point);
+        // let direction_to_light = (light.get_direction()) * (-1.0);
+        // let dir_to_light_length = direction_to_light.length();
+        // let normal_length = normal.length();
+        // let cos_angle = (direction_to_light.dot(&normal) as f64) / (dir_to_light_length * normal_length);
+        // let color = object.get_color() * light.get_color() * cos_angle;
+        // println!("cos_angle: {:?}", cos_angle);
+       // let light_reflected = object.get_albedeeeo(hit_point, &light.get_direction()) / std::f64::consts::PI;
+        let surface_normal = object.surface_normal(hit_point);
+        let direction_to_light = light.get_direction().normalize() * (-1.0);
+        let light_power = (surface_normal.dot(&direction_to_light) as f64).max(0.0) * light.get_intensity();
+        // let light_reflected = intersection.element.albedo() / std::f32::consts::PI;
+        let color = (object.get_color().clone() * light.get_color().clone()).normalize() * light_power;
+        // println!("color: {:?}", color);
+        let new_color = Vector3D::new(color.x * 255 as f64, color.y * 255 as f64, color.z * 255 as f64);
+        // println!("new color: {:?}", new_color);
+        new_color
+    }
     pub fn render(&mut self) {
         self.objects.sort_by(|a, b| b.get_center().z.partial_cmp(&a.get_center().z).unwrap());
         for y in (0..self.height).rev() {
@@ -126,14 +142,16 @@ impl Scene {
                 let r = self.camera.ray(u, v);
                 let mut hit_color = Vector3D::new(0.0, 0.0, 0.0);
                 for s in self.objects.iter() {
-                    if s.hits(r) == HitResult::Hit {
+                    if let Some(hit_point) = s.hits(r) {
                         // println!("hit color");
-                        hit_color = s.get_color();
+                        hit_color = Self::compute_lighting_directional(s, &self.lights, &hit_point, &r);
+                        // println!("hit color: {:?}", hit_color);
                         break;
                     } else {
-                        hit_color = Vector3D::new(0.0, 0.0, 255.0);
+                        hit_color = Vector3D::new(0.0, 0.0, 0.0);
                     }
                 }
+                // println!("hit color before write nigga: {:?}", hit_color);
                 Self::write_color(hit_color);
             }
         }

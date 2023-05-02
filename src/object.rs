@@ -6,10 +6,11 @@ pub enum HitResult {
 }
 
 pub trait Object {
-    fn hits(&self, ray: Ray) -> HitResult;
+    fn hits(&self, ray: Ray) -> Option<Point3D>;
     fn surface_normal(&self, hit_point: &Point3D) -> Vector3D;
     fn get_center(&self) -> Point3D;
     fn get_color(&self) -> Vector3D;
+    fn get_albedo(&self, hit_point: &Point3D, light_dir: &Vector3D) -> Vector3D;
 }
 #[derive(Copy, Clone, Debug)]
 pub struct Sphere {
@@ -28,22 +29,24 @@ impl Sphere {
     }
 }
 impl Object for Sphere {
-    fn hits(&self, ray: Ray) -> HitResult {
+    fn hits(&self, ray: Ray) -> Option<Point3D> {
         let oc = ray.origin - self.center;
         let a = ray.direction.dot(&ray.direction);
         let b = 2.0 * oc.dot(&ray.direction);
         let c = oc.dot(&oc) - self.radius.powi(2);
         let discriminant = b.powi(2) - 4.0 * a * c;
         if discriminant < 0.0 {
-            return HitResult::Missed;
+            return None;
         }
         let sqrt_discriminant = discriminant.sqrt();
         let t1 = (-b - sqrt_discriminant) / (2.0 * a);
         let t2 = (-b + sqrt_discriminant) / (2.0 * a);
         if t1 < 0.0 && t2 < 0.0 {
-            return HitResult::Missed;
+            return None;
         }
-        HitResult::Hit
+        let t = if t1 < t2 { t1 } else { t2 };
+        let hit_point = ray.origin + ray.direction * t;
+        Some(hit_point)
     }
     fn surface_normal(&self, hit_point: &Point3D) -> Vector3D {
         (*hit_point - self.center).normalize()
@@ -53,6 +56,12 @@ impl Object for Sphere {
     }
     fn get_color(&self) -> Vector3D {
         self.color
+    }
+    fn get_albedo(&self, hit_point: &Point3D, light_dir: &Vector3D) -> Vector3D {
+        let radius_sq = self.radius.powi(2);
+        let distance_sq = light_dir.length();
+        let factor = 4.0 * std::f64::consts::PI * radius_sq / distance_sq;
+        self.color * factor
     }
 }
 
@@ -83,15 +92,17 @@ impl Plane {
     }
 }
 impl Object for Plane {
-    fn hits(&self, ray: Ray) -> HitResult {
+    fn hits(&self, ray: Ray) -> Option<Point3D> {
         let normalize = ray.direction.normalize();
         let denom = normalize.dot(&self.normal);
         if denom > 0.0 {
-            // let p0l0: Vector3D = self.origin - ray.origin;
-            // let t = p0l0.dot(&self.normal) / denom;
-            return HitResult::Hit;
+            let p0l0: Vector3D = self.origin - ray.origin;
+            let t = p0l0.dot(&self.normal) / denom;
+            if t >= 0.0 {
+                return Some(ray.origin + ray.direction * t);
+            }
         }
-        HitResult::Missed
+        None
     }
     fn surface_normal(&self, _hit_point: &Point3D) -> Vector3D {
         self.normal
@@ -100,6 +111,13 @@ impl Object for Plane {
         self.origin
     }
     fn get_color(&self) -> Vector3D {
+        self.color
+    }
+    fn get_albedo(&self, hit_point: &Point3D, light_dir: &Vector3D) -> Vector3D {
+        // let radius_sq = self.radius.powi(2);
+        // let distance_sq = light_dir.length_squared();
+        // let factor = 4.0 * std::f64::consts::PI * radius_sq / distance_sq;
+        // self.color * factor
         self.color
     }
 }
