@@ -57,33 +57,44 @@ impl Object for Sphere {
 }
 
 pub struct Plane {
-    pub axis: String,
-    pub position: i32,
+    // pub axis: String,
+    // pub position: i32,
+    pub origin: Point3D,
     pub normal: Vector3D,
     pub color: Vector3D,
 }
 
 impl Default for Plane {
     fn default() -> Plane {
-        Plane { axis: String::from("x"), position: 0, normal: Vector3D::default(), color: Vector3D::default() }
+        // Plane { axis: String::from("x"), position: 0, normal: Vector3D::default(), color: Vector3D::default() }
+        Plane { origin: Point3D::default(), normal: Vector3D::default(), color: Vector3D::default() }
     }
 }
 
 impl Plane {
-    pub fn new(axis: String, position: i32, normal: Vector3D, color: Vector3D) -> Plane {
-        Plane { axis, position, normal, color}
+    pub fn new(origin: Point3D, normal: Vector3D, color: Vector3D) -> Plane {
+        Plane { origin, normal, color }
     }
-    pub fn hits(&self, ray: Ray) -> bool {
-        let normal = &self.normal;
-        let denom = normal.dot(&ray.direction);
-        if denom > 1e-6 {
-            let point = Point3D::new(0.0, 0.0, 0.0);
-            let v = point - ray.origin;
-            let distance = v.dot(&normal) / denom;
-            if distance >= 0.0 {
-                return true
-            }
+}
+impl Object for Plane {
+    fn hits(&self, ray: Ray) -> HitResult {
+        let normalize = ray.direction.normalize();
+        let denom = normalize.dot(&self.normal);
+        // println!("denom: {}", denom);
+        if denom > 0.0 {
+            let p0l0: Vector3D = self.origin - ray.origin;
+            let t = p0l0.dot(&self.normal) / denom;
+            return HitResult::Hit;
         }
-        false
+        HitResult::Missed
+    }
+    fn surface_normal(&self, _hit_point: &Point3D) -> Vector3D {
+        self.normal
+    }
+    fn get_center(&self) -> Point3D {
+        self.origin
+    }
+    fn get_color(&self) -> Vector3D {
+        self.color
     }
 }

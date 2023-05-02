@@ -127,6 +127,7 @@ impl Scene {
                 let mut hit_color = Vector3D::new(0.0, 0.0, 0.0);
                 for s in self.objects.iter() {
                     if s.hits(r) == HitResult::Hit {
+                        // println!("hit color");
                         hit_color = s.get_color();
                         break;
                     } else {

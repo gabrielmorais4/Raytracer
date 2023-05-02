@@ -18,7 +18,8 @@ fn main() {
         ),
     );
     let objects: Vec<Box<dyn Object>> = vec![
-        Box::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.3, Vector3D::new(0.0, 100.0, 100.0))),
+        Box::new(Sphere::new(Point3D::new(0.0, 0.1, -1.0), 0.3, Vector3D::new(0.0, 100.0, 100.0))),
+        Box::new(Plane::new(Point3D::new(0.0, 1.0, 0.0), Vector3D::new(0.0, -1.0, 0.0), Vector3D::new(255.0, 0.0, 0.0))),
     ];
     let lights = vec![
         Light::default()
