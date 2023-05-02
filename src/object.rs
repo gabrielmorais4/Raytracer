@@ -72,18 +72,23 @@ impl Default for Plane {
 }
 
 impl Plane {
-    pub fn new(origin: Point3D, normal: Vector3D, color: Vector3D) -> Plane {
-        Plane { origin, normal, color }
+    pub fn new(axis: String, position: i32, color: Vector3D) -> Plane {
+        if axis == "X" {
+            Plane { origin: Point3D::new(position as f64, 0.0, 0.0), normal: Vector3D::new(-1.0, 0.0, 0.0), color }
+        } else if axis == "Y" {
+            Plane { origin: Point3D::new(0.0, position as f64, 0.0), normal: Vector3D::new(0.0, -1.0, 0.0), color }
+        } else {
+            Plane { origin: Point3D::new(0.0, 0.0, position as f64), normal: Vector3D::new(0.0, 0.0, -1.0), color }
+        }
     }
 }
 impl Object for Plane {
     fn hits(&self, ray: Ray) -> HitResult {
         let normalize = ray.direction.normalize();
         let denom = normalize.dot(&self.normal);
-        // println!("denom: {}", denom);
         if denom > 0.0 {
-            let p0l0: Vector3D = self.origin - ray.origin;
-            let t = p0l0.dot(&self.normal) / denom;
+            // let p0l0: Vector3D = self.origin - ray.origin;
+            // let t = p0l0.dot(&self.normal) / denom;
             return HitResult::Hit;
         }
         HitResult::Missed
