@@ -8,3 +8,6 @@ result copy.ppm
 raytracer
 *.ppm
 .idea/
+teub
+*.ray
+

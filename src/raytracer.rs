@@ -1,7 +1,8 @@
 use crate::math::{Point3D, Vector3D};
 use crate::object::{Object, Sphere, Plane, HitResult};
+use serde::{Serialize, Deserialize};
 
-#[derive(Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub struct Ray {
     pub origin: Point3D,
     pub direction: Vector3D
@@ -19,6 +20,7 @@ impl Ray {
         std::mem::replace(&mut Ray {origin: Point3D::default(), direction: Vector3D::default()}, other)
     }
 }
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 
 pub struct Light {
     pub direction: Vector3D,
@@ -37,6 +39,7 @@ impl Light {
         Light { direction, color, intensity }
     }
 }
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub struct Rectangle3D {
     origin: Point3D,
     bottom_side: Vector3D,
@@ -58,18 +61,20 @@ impl Rectangle3D {
         p0 + v1.scale(u) + v2.scale(v)
     }
 }
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub struct Camera {
     pub origin: Point3D,
-    pub screen: Rectangle3D
+    pub screen: Rectangle3D,
+    pub field_of_view: f64
 }
 impl Default for Camera {
     fn default() -> Camera {
-        Camera { origin: Point3D::default(), screen: Rectangle3D::default() }
+        Camera { origin: Point3D::default(), screen: Rectangle3D::default(), field_of_view: 90.0 }
     }
 }
 impl Camera {
     pub fn new(origin: Point3D, screen: Rectangle3D) -> Camera {
-        Camera { origin, screen }
+        Camera { origin, screen, field_of_view: 90.0 }
     }
     pub fn ray(&self, u: f64, v: f64) -> Ray {
         Ray::new(self.origin, (self.screen.point_at(u, v) - self.origin).normalize())
