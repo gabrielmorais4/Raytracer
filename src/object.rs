@@ -1,9 +1,11 @@
 use crate::{math::{Point3D, Vector3D}, raytracer::Ray};
+use serde::{Serialize, Deserialize};
 #[derive(PartialEq)]
 pub enum HitResult {
     Hit,
     Missed,
 }
+
 
 pub trait Object {
     fn hits(&self, ray: Ray) -> HitResult;
@@ -11,7 +13,13 @@ pub trait Object {
     fn get_center(&self) -> Point3D;
     fn get_color(&self) -> Vector3D;
 }
-#[derive(Copy, Clone, Debug)]
+use std::fmt::{self, Debug};
+impl Debug for dyn Object {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Sphere {
     pub center: Point3D,
     pub radius: f64,
@@ -55,7 +63,7 @@ impl Object for Sphere {
         self.color
     }
 }
-
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Plane {
     // pub axis: String,
     // pub position: i32,
