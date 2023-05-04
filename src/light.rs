@@ -38,3 +38,28 @@ impl Light for DirectionalLight {
         self.intensity
     }
 }
+
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
+pub struct PointLight {
+    pub position: Point3D,
+    pub color: Vector3D,
+    pub intensity: f64,
+}
+
+impl PointLight {
+    pub fn new(position: Point3D, color: Vector3D, intensity: f64) -> PointLight {
+        PointLight { position, color, intensity }
+    }
+}
+
+impl Light for PointLight {
+    fn get_direction(&self) -> Vector3D {
+        (self.position - Point3D::new(0.0, 0.0, 0.0)).normalize()
+    }
+    fn get_color(&self) -> Vector3D {
+        self.color
+    }
+    fn get_intensity(&self) -> f64 {
+        self.intensity
+    }
+}

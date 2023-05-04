@@ -11,7 +11,7 @@ use object::{Object, Sphere, Plane};
 
 use light::{DirectionalLight};
 
-use crate::raytracer::{Camera, Rectangle3D, Scene};
+use crate::{raytracer::{Camera, Rectangle3D, Scene}, light::PointLight};
 
 fn main() {
     let height = 640;
@@ -22,16 +22,15 @@ fn main() {
     let objects: Vec<Box<dyn Object>> = vec![
         Box::new(Sphere::new(Point3D::new(60.0, 5.0, 40.0), 25.0, Vector3D::new(255.0, 64.0, 64.0))),
         Box::new(Sphere::new(Point3D::new(-40.0, 20.0, -10.0), 35.0, Vector3D::new(64.0, 255.0, 64.0))),
-        Box::new(Plane::new("Y".to_string(), -20, Vector3D::new(64.0, 64.0, 255.0))),
+        Box::new(Sphere::new(Point3D::new(-40.0, 20.0, -5.0), 20.0, Vector3D::new(100.0, 30.0, 24.0))),
+        Box::new(Plane::new("Z".to_string(), -20, Vector3D::new(64.0, 64.0, 255.0))),
     ];
-    let light = Box::new(DirectionalLight::new(Vector3D::new(-700.0, 400.0, 0.0).normalize(), Vector3D::new(255.0, 255.0, 255.0), 1.0));
+    let light: Box<PointLight> = Box::new(PointLight::new(Point3D::new(400.0, 100.0, 500.0), Vector3D::new(255.0, 255.0, 255.0), 1.0));
     let plane = Plane::default();
     let mut scene = Scene::new(cam, objects, light, plane, width, height);
     println!("P3\n{}\n{}\n{}", width, height, 255);
     scene.render();
 }
-
-
 
 fn parse_width_height(json: &Value) -> Result<(u32, u32), Box<dyn std::error::Error>> {
     let camera_json = json

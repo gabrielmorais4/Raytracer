@@ -74,8 +74,6 @@ impl Object for Sphere {
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Plane {
-    // pub axis: String,
-    // pub position: i32,
     pub origin: Point3D,
     pub normal: Vector3D,
     pub color: Vector3D,
@@ -90,11 +88,11 @@ impl Default for Plane {
 impl Plane {
     pub fn new(axis: String, position: i32, color: Vector3D) -> Plane {
         if axis == "X" {
-            Plane { origin: Point3D::new(position as f64, 0.0, 0.0), normal: Vector3D::new(-1.0, 0.0, 0.0), color }
+            Plane { origin: Point3D::new(position as f64, 0.0, 0.0), normal: Vector3D::new(1.0, 0.0, 0.0), color }
         } else if axis == "Y" {
-            Plane { origin: Point3D::new(0.0, position as f64, 0.0), normal: Vector3D::new(0.0, -1.0, 0.0), color }
+            Plane { origin: Point3D::new(0.0, position as f64, 0.0), normal: Vector3D::new(0.0, 1.0, 0.0), color }
         } else {
-            Plane { origin: Point3D::new(0.0, 0.0, position as f64), normal: Vector3D::new(0.0, 0.0, -1.0), color }
+            Plane { origin: Point3D::new(0.0, 0.0, position as f64), normal: Vector3D::new(0.0, 0.0, 1.0), color }
         }
     }
     pub fn rotate(&mut self, axis: String, angle: f64) {
@@ -122,9 +120,7 @@ impl Object for Plane {
         if denom > 0.0 {
             let p0l0: Vector3D = self.origin - ray.origin;
             let t = p0l0.dot(&self.normal) / denom;
-            if t >= 0.0 {
-                return Some(ray.origin + ray.direction * t);
-            }
+            return Some(ray.origin + ray.direction * t);
         }
         None
     }
@@ -138,10 +134,6 @@ impl Object for Plane {
         self.color
     }
     fn get_albedo(&self, hit_point: &Point3D, light_dir: &Vector3D) -> Vector3D {
-        // let radius_sq = self.radius.powi(2);
-        // let distance_sq = light_dir.length_squared();
-        // let factor = 4.0 * std::f64::consts::PI * radius_sq / distance_sq;
-        // self.color * factor
         self.color
     }
 }

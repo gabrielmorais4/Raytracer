@@ -115,7 +115,7 @@ impl Scene {
     }
     pub fn compute_lighting_directional(object: &Box<dyn Object>, light: &Box<dyn Light>, hit_point: &Point3D, ray: &Ray) -> Vector3D {
         let surface_normal = object.surface_normal(hit_point);
-        let direction_to_light = light.get_direction().normalize() * (-1.0);
+        let direction_to_light = light.get_direction().normalize();
         let light_power = (surface_normal.dot(&direction_to_light) as f64).max(0.0) * light.get_intensity();
         let color = (object.get_color().clone() * light.get_color().clone()).normalize() * light_power;
         let new_color = Vector3D::new(color.x * 255 as f64, color.y * 255 as f64, color.z * 255 as f64);
