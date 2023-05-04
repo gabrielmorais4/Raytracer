@@ -10,4 +10,5 @@ raytracer
 .idea/
 teub
 *.ray
-
+*/.DS_Store
+.DS_Store
