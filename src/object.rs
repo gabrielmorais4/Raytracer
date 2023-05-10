@@ -88,11 +88,11 @@ impl Default for Plane {
 impl Plane {
     pub fn new(axis: String, position: i32, color: Vector3D) -> Plane {
         if axis == "X" {
-            Plane { origin: Point3D::new(position as f64, 0.0, 0.0), normal: Vector3D::new(1.0, 0.0, 0.0), color }
+            Plane { origin: Point3D::new(position as f64, 0.0, 0.0), normal: Vector3D::new(0.0, 0.0, 1.0), color }
         } else if axis == "Y" {
-            Plane { origin: Point3D::new(0.0, position as f64, 0.0), normal: Vector3D::new(0.0, 1.0, 0.0), color }
+            Plane { origin: Point3D::new(0.0, position as f64, 0.0), normal: Vector3D::new(1.0, 0.0, 0.0), color }
         } else {
-            Plane { origin: Point3D::new(0.0, 0.0, position as f64), normal: Vector3D::new(0.0, 0.0, 1.0), color }
+            Plane { origin: Point3D::new(0.0, 0.0, position as f64), normal: Vector3D::new(0.0, -1.0, 0.0), color }
         }
     }
     pub fn rotate(&mut self, axis: String, angle: f64) {
@@ -125,7 +125,7 @@ impl Object for Plane {
         None
     }
     fn surface_normal(&self, _hit_point: &Point3D) -> Vector3D {
-        self.normal
+        self.normal * -1.0
     }
     fn get_center(&self) -> Point3D {
         self.origin
