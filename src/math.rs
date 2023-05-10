@@ -42,6 +42,13 @@ impl Vector3D {
     pub fn scale(&self, s: f64) -> Vector3D {
         Vector3D { x: self.x * s, y: self.y * s, z: self.z * s }
     }
+    pub fn cross(self, other: Self) -> Vector3D {
+        Vector3D {
+            x: self.y * other.z - self.z * other.y,
+            y: self.z * other.x - self.x * other.z,
+            z: self.x * other.y - self.y * other.x,
+        }
+    }
 }
 impl Add<Vector3D> for Vector3D {
     type Output = Vector3D;
