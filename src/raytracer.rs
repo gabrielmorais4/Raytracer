@@ -114,14 +114,39 @@ impl Scene {
         let color = color.get_color();
         println!("{} {} {}", color.0, color.1, color.2);
     }
-    pub fn compute_lighting_directional(object: &Box<dyn Object>, light: &Box<dyn Light>, hit_point: &Point3D, ray: &Ray) -> Vector3D {
+    pub fn compute_lighting_directional(object: &Box<dyn Object>, light: &Box<dyn Light>, hit_point: &Point3D, ray: &Ray, objects: &Vec<Box<dyn Object>>) -> Vector3D {
         let surface_normal = object.surface_normal(hit_point);
         let direction_to_light = light.get_direction().normalize();
         let light_power = (surface_normal.dot(&direction_to_light) as f64).max(0.0) * light.get_intensity();
-        let color = (object.get_color().clone() * light.get_color().clone()).normalize() * light_power;
+        let mut color = Vector3D::new(0.0, 0.0, 0.0);
+
+        // Test d'intersection entre le point d'intersection et les autres objets de la scène
+        let shadow_ray = Ray::new((hit_point.clone() + (surface_normal)), direction_to_light.clone());
+        let mut is_shadowed = false;
+        for other_object in objects.iter() {
+            if (object.get_center() != other_object.get_center()) {
+                if let Some(_) = other_object.hits(shadow_ray) {
+                    is_shadowed = true;
+                    break;
+                }
+            }
+        }
+
+        if is_shadowed {
+            // Lumière obstruée, appliquer une couleur plus sombre
+            color = (object.get_color().clone() * light.get_color().clone()).normalize() * light_power;
+            let mut shadow_color = Vector3D::new(color.x * 255 as f64, color.y * 255 as f64, color.z * 255 as f64);
+            shadow_color *= 0.5;
+            return shadow_color;
+        } else {
+            // Pas d'obstruction, calculer la couleur normale
+            color = (object.get_color().clone() * light.get_color().clone()).normalize() * light_power;
+        }
         let new_color = Vector3D::new(color.x * 255 as f64, color.y * 255 as f64, color.z * 255 as f64);
+
         new_color
     }
+
     pub fn find_greater_z(&self, hitting_points: &Vec<Point3D>) -> usize {
         let mut greater_z = hitting_points[0].z;
         let mut index = 0;
@@ -159,11 +184,11 @@ impl Scene {
                 }
                 if (multiple_hit > 1) {
                     let mut index = self.find_greater_z(&hitting_points);
-                    hit_color = Self::compute_lighting_directional(hitting_shapes[index], &self.lights, &hitting_points[index], &r);
+                    hit_color = Self::compute_lighting_directional(hitting_shapes[index], &self.lights, &hitting_points[index], &r, &self.objects);
                     Self::write_color(hit_color);
                 }
                 if (multiple_hit == 1) {
-                    hit_color = Self::compute_lighting_directional(hitting_shapes[0], &self.lights, &hitting_points[0], &r);
+                    hit_color = Self::compute_lighting_directional(hitting_shapes[0], &self.lights, &hitting_points[0], &r, &self.objects);
                     Self::write_color(hit_color);
                 }
             }
