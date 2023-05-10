@@ -14,6 +14,7 @@ pub trait Object {
     fn get_color(&self) -> Vector3D;
     fn get_albedo(&self, hit_point: &Point3D, light_dir: &Vector3D) -> Vector3D;
 }
+
 use std::fmt::{self, Debug};
 impl Debug for dyn Object {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

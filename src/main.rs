@@ -10,10 +10,9 @@ use math::{Point3D, Vector3D};
 use std::env;
 
 use object::{Object, Sphere, Plane};
+use light::{Light, PointLight, DirectionalLight};
 
-use light::{DirectionalLight};
-
-use crate::{raytracer::{Camera, Rectangle3D, Scene}, light::PointLight};
+use crate::{raytracer::{Camera, Rectangle3D, Scene}};
 #[derive(Serialize, Deserialize, Debug)]
 struct Color {
     r: u8,
@@ -38,7 +37,7 @@ struct PlaneData {
 #[derive(Debug, Deserialize)]
 struct PrimitivesData {
     spheres: Vec<SphereData>,
-    planes: Vec<PlaneData>,
+    planes: Option<Vec<PlaneData>>,
 }
 
 fn get_camera_data() -> Camera
@@ -65,13 +64,9 @@ fn get_objects_data() -> Vec<Box<dyn Object>>
 
     let data: PrimitivesData = serde_json::from_str(&primitives_json_str).unwrap();
     let spheres2: Vec<Sphere> = data.spheres.into_iter().map(|sphere_data| {
-        Sphere {
-            center: Point3D { x: sphere_data.x, y: sphere_data.y, z: sphere_data.z },
-            radius: sphere_data.r,
-            color: Vector3D { x: sphere_data.color.r as f64, y: sphere_data.color.g as f64, z: sphere_data.color.b as f64 },
-        }
+        Sphere::new(Point3D { x: sphere_data.x, y: sphere_data.y, z: sphere_data.z }, sphere_data.r, Vector3D { x: sphere_data.color.r as f64, y: sphere_data.color.g as f64, z: sphere_data.color.b as f64 })
     }).collect();
-    let planes2: Vec<Plane> = data.planes.into_iter().map(|plane_data| {
+    let planes2: Vec<Plane> = data.planes.unwrap_or(Vec::new()).into_iter().map(|plane_data| {
         Plane::new(plane_data.axis, plane_data.position, Vector3D { x: plane_data.color.r as f64, y: plane_data.color.g as f64, z: plane_data.color.b as f64 })
     }).collect();
     let objects: Vec<Box<dyn Object>> = planes2
@@ -120,9 +115,12 @@ fn main() {
     let objects = get_objects_data();
     let width_height = get_height_width_data();
     cam.aspect_ratio = width_height.0 as f64 / width_height.1 as f64;
-    let light: Box<PointLight> = Box::new(PointLight::new(Point3D::new(50.0, 100.0, 1.0), Vector3D::new(255.0, 255.0, 255.0), 1.0));
+    let lights: Vec<Box<dyn Light>> = vec![
+        Box::new(PointLight::new(Point3D::new(400.0, 100.0, 500.0), Vector3D::new(255.0, 255.0, 255.0), 1.0)),
+        Box::new(DirectionalLight::new(Vector3D::new(0.0, 0.0, 1.0), Vector3D::new(255.0, 255.0, 255.0), 1.0)),
+    ];
     let plane = Plane::default();
-    let mut scene = Scene::new(cam, objects, light, plane, width_height.0, width_height.1);
+    let mut scene = Scene::new(cam, objects, lights, plane, width_height.0, width_height.1);
     println!("P3\n{}\n{}\n{}", width_height.0, width_height.1, 255);
     scene.render();
 }
@@ -171,12 +169,7 @@ fn parse_camera(json: &Value) -> Result<Camera, Box<dyn std::error::Error>> {
     );
     let aspect_ratio = width as f64 / height as f64;
 
-    let camera = Camera {
-        origin,
-        screen,
-        fov,
-        aspect_ratio,
-    };
+    let camera = Camera::new(origin, fov, aspect_ratio);
 
     Ok(camera)
 }
