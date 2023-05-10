@@ -79,7 +79,6 @@ impl Camera {
         let left_side = up * (2.0 * half_height);
 
         Rectangle3D::new(bottom_left, bottom_side, left_side)
-        
     }
 }
 
@@ -88,25 +87,25 @@ pub struct Scene {
     pub height: u32,
     pub camera: Camera, // camera of the scene
     pub objects: Vec<Box<dyn Object>>, // list of Objects
-    pub lights: Box<dyn Light>, // list of Lights
+    pub lights: Vec<Box<dyn Light>>, // list of Lights
     pub plane: Plane // plane of the scene
 }
 
 impl Default for Scene {
     fn default() -> Scene {
-        Scene { camera: Camera::default(), objects: Vec::new(), lights: Box::new(DirectionalLight::default()), plane: Plane::default(), width: 0, height: 0 }
+        Scene { camera: Camera::default(), objects: Vec::new(), lights: Vec::new(), plane: Plane::default(), width: 0, height: 0 }
     }
 }
 
 impl Scene {
-    pub fn new(camera: Camera, objects: Vec<Box<dyn Object>>, lights: Box<dyn Light>, plane: Plane, width: u32, height: u32) -> Scene {
+    pub fn new(camera: Camera, objects: Vec<Box<dyn Object>>, lights: Vec<Box<dyn Light>>, plane: Plane, width: u32, height: u32) -> Scene {
         Scene { camera, objects, lights, plane, width, height }
     }
     pub fn add_object(&mut self, object: Box<dyn Object>) {
         self.objects.push(object);
     }
     pub fn add_light(&mut self, light: Box<dyn Light>) {
-        self.lights = light;
+        self.lights.push(light);
     }
     pub fn add_plane(&mut self, plane: Plane) {
         self.plane = plane;
@@ -127,6 +126,19 @@ impl Scene {
         let new_color = Vector3D::new(color.x * 255 as f64, color.y * 255 as f64, color.z * 255 as f64);
         new_color
     }
+    pub fn find_greater_z(&self, hitting_points: &Vec<Point3D>) -> usize {
+        let mut greater_z = hitting_points[0].z;
+        let mut index = 0;
+        let mut j = 0;
+        for hit_points in hitting_points.iter() {
+            if hit_points.z > greater_z {
+                greater_z = hit_points.z;
+                j = index;
+            }
+            index += 1;
+        }
+        j
+    }
     pub fn render(&mut self) {
         self.objects.sort_by(|a, b| b.get_center().z.partial_cmp(&a.get_center().z).unwrap());
         for y in (0..self.height).rev() {
@@ -135,16 +147,41 @@ impl Scene {
                 let v = y as f64 / (self.height - 1) as f64;
                 let r = self.camera.ray(u, v);
                 let mut hit_color = Vector3D::new(0.0, 0.0, 0.0);
+                let mut multiple_hit = 0;
+                let mut hitting_points: Vec<Point3D> = Vec::new();
+                let mut hitting_shapes: Vec<&Box<dyn Object>> = Vec::new();
                 for s in self.objects.iter() {
                     if let Some(hit_point) = s.hits(r) {
-                        // hit_color = s.get_color();
-                        hit_color = Self::compute_lighting_directional(s, &self.lights, &hit_point, &r);
-                        break;
-                    } else {
-                        hit_color = Vector3D::new(0.0, 0.0, 0.0);
+                        multiple_hit += 1;
+                        hitting_points.push(hit_point);
+                        hitting_shapes.push(s);
                     }
                 }
-                Self::write_color(hit_color);
+                if multiple_hit == 0 {
+                    hit_color = Vector3D::new(0.0, 0.0, 0.0);
+                    Self::write_color(hit_color);
+                } else if multiple_hit > 1 {
+                    let index = self.find_greater_z(&hitting_points);
+                    for light in &self.lights {
+                        hit_color += Self::compute_lighting_directional(
+                            hitting_shapes[index],
+                            light,
+                            &hitting_points[index],
+                            &r,
+                        );
+                    }
+                    Self::write_color(hit_color);
+                } else if multiple_hit == 1 {
+                    for light in &self.lights {
+                        hit_color += Self::compute_lighting_directional(
+                            hitting_shapes[0],
+                            light,
+                            &hitting_points[0],
+                            &r,
+                        );
+                    }
+                    Self::write_color(hit_color);
+                }
             }
         }
     }
