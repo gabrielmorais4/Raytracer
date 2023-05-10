@@ -65,16 +65,21 @@ impl Camera {
         Ray::new(self.origin, (self.screen.point_at(u, v) - self.origin).normalize())
     }
     pub fn calculate_screen(origin: Point3D, fov: f64, aspect_ratio: f64) -> Rectangle3D {
-        // let half_height = (fov.to_radians() / 2.0).tan();
-        // let half_width = aspect_ratio * half_height;
-        // let width = half_width * 2.0;
-        // let height = half_height * 2.0;
-        // let center = origin + Vector3D::new(0.0, 1.0, 0.0);
-        // let horizontal = Vector3D::new(width, 0.0, 0.0);
-        // let vertical = Vector3D::new(0.0, 0.0, height);
-        // let bottom_left = center - horizontal / 2.0 - vertical / 2.0;
-        // Rectangle3D::new(bottom_left, horizontal, vertical)
-        Rectangle3D { origin: Point3D::new(-0.5, -0.5, -1.0), bottom_side: Vector3D::new(1.0, 0.0, 0.0), left_side: Vector3D::new(0.0, 1.0, 0.0) }
+        let half_height = (fov.to_radians() / 2.0).tan();
+        let half_width = aspect_ratio * half_height;
+        let bottom_left = Vector3D::new(-half_width, -half_height, -1.0);
+        let right = Vector3D::new(2.0 * half_width, 0.0, 0.0);
+        let up = Vector3D::new(0.0, 2.0 * half_height, 0.0);
+
+        let bottom_left = origin + bottom_left;
+        let right = right.normalize();
+        let up = up.normalize();
+
+        let bottom_side = right * (2.0 * half_width);
+        let left_side = up * (2.0 * half_height);
+
+        Rectangle3D::new(bottom_left, bottom_side, left_side)
+        
     }
 }
 
