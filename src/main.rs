@@ -111,51 +111,62 @@ fn get_height_width_data() -> (u32, u32)
 //     scene.render();
 // }
 
-fn average_pixels(image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
+fn apply_anti_aliasing(file_path: &str) {
+    // Abra o arquivo temporário
+    let image = image::open(file_path).expect("Falha ao abrir a imagem temporária").to_rgb();
     let width = image.width();
     let height = image.height();
 
-    for y in 0..height {
+    // Crie uma nova imagem para armazenar a imagem com anti-aliasing
+    let mut anti_aliasing_image = ImageBuffer::new(width / 2, height / 2);
+
+    // Percorra cada dois pixels consecutivos e faça a média
+    for y in (0..height).step_by(2) {
         for x in (0..width).step_by(2) {
             let pixel1 = image.get_pixel(x, y);
-            let pixel2 = if x + 1 < width {
-                image.get_pixel(x + 1, y)
-            } else {
-                pixel1
-            };
+            let pixel2 = image.get_pixel(x + 1, y);
+            let pixel3 = image.get_pixel(x, y + 1);
+            let pixel4 = image.get_pixel(x + 1, y + 1);
 
-            let averaged_pixel = average_rgb_pixels(pixel1, pixel2);
-            image.put_pixel(x / 2, y, averaged_pixel);
+            let averaged_pixel = average_rgb_pixels(&pixel1, &pixel2, &pixel3, &pixel4);
+            anti_aliasing_image.put_pixel(x / 2, y / 2, averaged_pixel);
         }
     }
+
+    // Salve a imagem resultante com anti-aliasing em um novo arquivo PPM
+    anti_aliasing_image.save("antialising.ppm").expect("Falha ao salvar a imagem com anti-aliasing");
 }
 
-fn average_rgb_pixels(pixel1: &Rgb<u8>, pixel2: &Rgb<u8>) -> Rgb<u8> {
-    let r = (pixel1[0] as u16 + pixel2[0] as u16) / 2;
-    let g = (pixel1[1] as u16 + pixel2[1] as u16) / 2;
-    let b = (pixel1[2] as u16 + pixel2[2] as u16) / 2;
+fn average_rgb_pixels(
+    pixel1: &Rgb<u8>,
+    pixel2: &Rgb<u8>,
+    pixel3: &Rgb<u8>,
+    pixel4: &Rgb<u8>,
+) -> Rgb<u8> {
+    let r = ((pixel1[0] as u16 + pixel2[0] as u16 + pixel3[0] as u16 + pixel4[0] as u16) / 4) as u8;
+    let g = ((pixel1[1] as u16 + pixel2[1] as u16 + pixel3[1] as u16 + pixel4[1] as u16) / 4) as u8;
+    let b = ((pixel1[2] as u16 + pixel2[2] as u16 + pixel3[2] as u16 + pixel4[2] as u16) / 4) as u8;
 
-    Rgb([r as u8, g as u8, b as u8])
+    Rgb([r, g, b])
 }
-
 
 fn main() {
     let mut cam = get_camera_data();
-    let mut objects = get_objects_data();
+    let mut objects: Vec<Box<dyn Object>> = get_objects_data();
     objects.push(Box::new(Cylinder::new(Point3D::new(-0.2, 0.2, -1.0), 0.2, "Y", Vector3D::new(255.0, 255.0, 0.0))));
-    let width_height = get_height_width_data();
-    cam.aspect_ratio = width_height.0 as f64 / width_height.1 as f64;
+    let width_height: (u32, u32) = get_height_width_data();
+    let width = width_height.0;
+    let height = width_height.1;
+    cam.aspect_ratio = width as f64 / height as f64;
     let lights: Vec<Box<dyn Light>> = vec![
         Box::new(PointLight::new(Point3D::new(400.0, 100.0, 500.0), Vector3D::new(255.0, 255.0, 255.0), 1.0)),
-        Box::new(DirectionalLight::new(Vector3D::new(0.0, 0.0, 1.0), Vector3D::new(255.0, 255.0, 255.0), 1.0)),
+        // Box::new(DirectionalLight::new(Vector3D::new(0.0, 0.0, 1.0), Vector3D::new(255.0, 255.0, 255.0), 1.0)),
     ];
     let plane = Plane::default();
-    let mut scene = Scene::new(cam, objects, lights, plane, width_height.0, width_height.1);
+    let mut scene = Scene::new(cam, objects, lights, plane, width, height);
     println!("P3\n{}\n{}\n{}", width_height.0, width_height.1, 255);
     scene.render();
-    // let mut image = image::open("result.ppm").expect("Falha ao abrir a imagem").to_rgb();
-    // average_pixels(&mut image);
-    // image.save("output.ppm").expect("Falha ao salvar a imagem");
+    apply_anti_aliasing("temp.ppm");
 }
 
 fn parse_width_height(json: &Value) -> Result<(u32, u32), Box<dyn std::error::Error>> {
@@ -166,8 +177,8 @@ fn parse_width_height(json: &Value) -> Result<(u32, u32), Box<dyn std::error::Er
     let resolution_json = camera_json
         .get("resolution")
         .ok_or_else(|| "Camera resolution not found in JSON")?;
-    let width = u32::try_from(resolution_json["width"].as_u64().unwrap_or_default())?;
-    let height = u32::try_from(resolution_json["height"].as_u64().unwrap_or_default())?;
+    let width = u32::try_from(resolution_json["width"].as_u64().unwrap_or_default())? * 2;
+    let height = u32::try_from(resolution_json["height"].as_u64().unwrap_or_default())? * 2;
     Ok((width, height))
 }
 
