@@ -38,7 +38,7 @@ struct PlaneData {
 #[derive(Debug, Deserialize)]
 struct PrimitivesData {
     spheres: Vec<SphereData>,
-    planes: Vec<PlaneData>,
+    planes: Option<Vec<PlaneData>>,
 }
 
 fn get_camera_data() -> Camera
@@ -67,7 +67,7 @@ fn get_objects_data() -> Vec<Box<dyn Object>>
     let spheres2: Vec<Sphere> = data.spheres.into_iter().map(|sphere_data| {
         Sphere::new(Point3D { x: sphere_data.x, y: sphere_data.y, z: sphere_data.z }, sphere_data.r, Vector3D { x: sphere_data.color.r as f64, y: sphere_data.color.g as f64, z: sphere_data.color.b as f64 })
     }).collect();
-    let planes2: Vec<Plane> = data.planes.into_iter().map(|plane_data| {
+    let planes2: Vec<Plane> = data.planes.unwrap_or(Vec::new()).into_iter().map(|plane_data| {
         Plane::new(plane_data.axis, plane_data.position, Vector3D { x: plane_data.color.r as f64, y: plane_data.color.g as f64, z: plane_data.color.b as f64 })
     }).collect();
     let objects: Vec<Box<dyn Object>> = planes2
