@@ -10,10 +10,9 @@ use math::{Point3D, Vector3D};
 use std::env;
 
 use object::{Object, Sphere, Plane, Cylinder};
+use light::{Light, PointLight, DirectionalLight};
 
-use light::{DirectionalLight};
-
-use crate::{raytracer::{Camera, Rectangle3D, Scene}, light::PointLight};
+use crate::{raytracer::{Camera, Rectangle3D, Scene}};
 #[derive(Serialize, Deserialize, Debug)]
 struct Color {
     r: u8,
@@ -89,15 +88,40 @@ fn get_height_width_data() -> (u32, u32)
     return width_height;
 }
 
+// MAIN FOR DEBUG
+// fn main() {
+//     let height = 640;
+//     let width = 860;
+//     let screenRatio = width as f64 / height as f64;
+//     let cam = Camera::new(
+//         Point3D::new(0.0, 0.0, 1.0), 72.0, screenRatio);
+//     let objects: Vec<Box<dyn Object>> = vec![
+//         // Box::new(Sphere::new(Point3D::new(60.0, 5.0, 40.0), 25.0, Vector3D::new(255.0, 64.0, 64.0))),
+//         // Box::new(Sphere::new(Point3D::new(-40.0, 20.0, -10.0), 35.0, Vector3D::new(64.0, 255.0, 64.0))),
+//         // Box::new(Sphere::new(Point3D::new(-40.0, 20.0, -5.0), 20.0, Vector3D::new(100.0, 30.0, 24.0))),
+//         // Box::new(Plane::new("Z".to_string(), 0, Vector3D::new(64.0, 64.0, 255.0))),
+//         Box::new(Sphere::new(Point3D::new(0.0, 1.0, -10.0), 0.5, Vector3D::new(0.0, 255.0, 64.0))),
+//         Box::new(Plane::new("Y".to_string(), -1, Vector3D::new(64.0, 64.0, 255.0))),
+//     ];
+//     let light: Box<PointLight> = Box::new(PointLight::new(Point3D::new(400.0, 100.0, 500.0), Vector3D::new(255.0, 255.0, 255.0), 1.0));
+//     let plane = Plane::default();
+//     let mut scene = Scene::new(cam, objects, light, plane, width, height);
+//     println!("P3\n{}\n{}\n{}", width, height, 255);
+//     scene.render();
+// }
+
 fn main() {
     let mut cam = get_camera_data();
     let mut objects = get_objects_data();
     objects.push(Box::new(Cylinder::new(Point3D::new(-0.2, 0.2, -1.0), 0.2, "Y", Vector3D::new(255.0, 255.0, 0.0))));
     let width_height = get_height_width_data();
     cam.aspect_ratio = width_height.0 as f64 / width_height.1 as f64;
-    let light: Box<PointLight> = Box::new(PointLight::new(Point3D::new(400.0, 100.0, 500.0), Vector3D::new(255.0, 255.0, 255.0), 1.0));
+    let lights: Vec<Box<dyn Light>> = vec![
+        Box::new(PointLight::new(Point3D::new(400.0, 100.0, 500.0), Vector3D::new(255.0, 255.0, 255.0), 1.0)),
+        Box::new(DirectionalLight::new(Vector3D::new(0.0, 0.0, 1.0), Vector3D::new(255.0, 255.0, 255.0), 1.0)),
+    ];
     let plane = Plane::default();
-    let mut scene = Scene::new(cam, objects, light, plane, width_height.0, width_height.1);
+    let mut scene = Scene::new(cam, objects, lights, plane, width_height.0, width_height.1);
     println!("P3\n{}\n{}\n{}", width_height.0, width_height.1, 255);
     scene.render();
 }
