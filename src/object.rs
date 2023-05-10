@@ -150,6 +150,22 @@ impl Object for Plane {
             let point = ray.origin + ray.direction * t;
             return Some(point);
         }
+        if (self.axis == "X") {
+            value = self.position as f64 - ray.origin.x;
+            if (value.abs() < (ray.direction.x + value).abs()) {
+                return None;
+            }
+            let firstPoint = Point3D::new(self.position as f64, 100.0, 200.0);
+            let secondPoint = Point3D::new(self.position as f64, 200.0, -100.0);
+            let thirdPoint = Point3D::new(self.position as f64, -30.0, -50.0);
+            let firstVec = firstPoint - secondPoint;
+            let secondVec = thirdPoint - secondPoint;
+            let mut normal = firstVec.cross(secondVec);
+            normal = normal.normalize();
+            let t = normal.dot(&(firstPoint - ray.origin)) / normal.dot(&ray.direction);
+            let point = ray.origin + ray.direction * t;
+            return Some(point);
+        }
         None
     }
     fn surface_normal(&self, _hit_point: &Point3D) -> Vector3D {
