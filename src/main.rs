@@ -20,12 +20,9 @@ fn main() {
     let cam = Camera::new(
         Point3D::new(0.0, 0.0, 1.0), 72.0, screenRatio);
     let objects: Vec<Box<dyn Object>> = vec![
-        // Box::new(Sphere::new(Point3D::new(60.0, 5.0, 40.0), 25.0, Vector3D::new(255.0, 64.0, 64.0))),
-        // Box::new(Sphere::new(Point3D::new(-40.0, 20.0, -10.0), 35.0, Vector3D::new(64.0, 255.0, 64.0))),
-        // Box::new(Sphere::new(Point3D::new(-40.0, 20.0, -5.0), 20.0, Vector3D::new(100.0, 30.0, 24.0))),
-        // Box::new(Plane::new("Z".to_string(), 0, Vector3D::new(64.0, 64.0, 255.0))),
-        Box::new(Sphere::new(Point3D::new(0.0, 0.0, -10.0), 0.5, Vector3D::new(255.0, 64.0, 64.0))),
-        Box::new(Plane::new("Z".to_string(), -20, Vector3D::new(64.0, 64.0, 255.0))),
+        Box::new(Sphere::new(Point3D::new(0.0, -1.0, -10.0), 0.5, Vector3D::new(255.0, 64.0, 64.0))),
+        Box::new(Sphere::new(Point3D::new(0.5, -1.0, -10.0), 0.5, Vector3D::new(0.0, 255.0, 64.0))),
+        Box::new(Plane::new("Y".to_string(), -1, Vector3D::new(64.0, 64.0, 255.0))),
     ];
     let light: Box<PointLight> = Box::new(PointLight::new(Point3D::new(400.0, 100.0, 500.0), Vector3D::new(255.0, 255.0, 255.0), 1.0));
     let plane = Plane::default();

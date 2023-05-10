@@ -77,22 +77,24 @@ pub struct Plane {
     pub origin: Point3D,
     pub normal: Vector3D,
     pub color: Vector3D,
+    pub axis: String,
+    pub position: i32,
 }
 
 impl Default for Plane {
     fn default() -> Plane {
-        Plane { origin: Point3D::default(), normal: Vector3D::default(), color: Vector3D::default() }
+        Plane { origin: Point3D::default(), normal: Vector3D::default(), color: Vector3D::default(), axis: "Z".to_string(), position: 0 }
     }
 }
 
 impl Plane {
     pub fn new(axis: String, position: i32, color: Vector3D) -> Plane {
         if axis == "X" {
-            Plane { origin: Point3D::new(position as f64, 0.0, 0.0), normal: Vector3D::new(0.0, 0.0, 1.0), color }
+            Plane { origin: Point3D::new(position as f64, 0.0, 0.0), normal: Vector3D::new(0.0, 0.0, 1.0), color, axis, position }
         } else if axis == "Y" {
-            Plane { origin: Point3D::new(0.0, position as f64, 0.0), normal: Vector3D::new(1.0, 0.0, 0.0), color }
+            Plane { origin: Point3D::new(0.0, position as f64, 0.0), normal: Vector3D::new(-1.0, 0.0, 0.0), color, axis, position }
         } else {
-            Plane { origin: Point3D::new(0.0, 0.0, position as f64), normal: Vector3D::new(0.0, -1.0, 0.0), color }
+            Plane { origin: Point3D::new(0.0, 0.0, position as f64), normal: Vector3D::new(0.0, -1.0, 0.0), color, axis, position }
         }
     }
     pub fn rotate(&mut self, axis: String, angle: f64) {
@@ -115,12 +117,38 @@ impl Plane {
 }
 impl Object for Plane {
     fn hits(&self, ray: Ray) -> Option<Point3D> {
-        let normalize = ray.direction.normalize();
-        let denom = normalize.dot(&self.normal);
-        if denom > 0.0 {
-            let p0l0: Vector3D = self.origin - ray.origin;
-            let t = p0l0.dot(&self.normal) / denom;
-            return Some(ray.origin + ray.direction * t);
+        let mut value = 0.0;
+        if (self.axis == "Z") {
+            value = self.position as f64 - ray.origin.z;
+            if (value.abs() < (ray.direction.z + value).abs()) {
+                return None;
+            }
+            let firstPoint = Point3D::new(100.0, 200.0, self.position as f64);
+            let secondPoint = Point3D::new(200.0, -100.0, self.position as f64);
+            let thirdPoint = Point3D::new(-30.0, -50.0, self.position as f64);
+            let firstVec = firstPoint - secondPoint;
+            let secondVec = thirdPoint - secondPoint;
+            let mut normal = firstVec.cross(secondVec);
+            normal = normal.normalize();
+            let t = normal.dot(&(firstPoint - ray.origin)) / normal.dot(&ray.direction);
+            let point = ray.origin + ray.direction * t;
+            return Some(point);
+        }
+        if (self.axis == "Y") {
+            value = self.position as f64 - ray.origin.y * -1.0;
+            if (value.abs() < (ray.direction.y * -1.0 + value).abs()) {
+                return None;
+            }
+            let firstPoint = Point3D::new(100.0, self.position as f64, 200.0);
+            let secondPoint = Point3D::new(200.0, self.position as f64, -100.0);
+            let thirdPoint = Point3D::new(-30.0, self.position as f64, -50.0);
+            let firstVec = firstPoint - secondPoint;
+            let secondVec = thirdPoint - secondPoint;
+            let mut normal = firstVec.cross(secondVec);
+            normal = normal.normalize();
+            let t = normal.dot(&(firstPoint - ray.origin)) / normal.dot(&ray.direction);
+            let point = ray.origin + ray.direction * t;
+            return Some(point);
         }
         None
     }
