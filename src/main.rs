@@ -8,6 +8,7 @@ use serde_json::Value;
 use serde::{Deserialize, Serialize};
 use math::{Point3D, Vector3D};
 use std::env;
+use image::{GenericImageView, ImageBuffer, Rgb};
 
 use object::{Object, Sphere, Plane};
 use light::{Light, PointLight, DirectionalLight};
@@ -110,6 +111,34 @@ fn get_height_width_data() -> (u32, u32)
 //     scene.render();
 // }
 
+fn average_pixels(image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>) {
+    let width = image.width();
+    let height = image.height();
+
+    for y in 0..height {
+        for x in (0..width).step_by(2) {
+            let pixel1 = image.get_pixel(x, y);
+            let pixel2 = if x + 1 < width {
+                image.get_pixel(x + 1, y)
+            } else {
+                pixel1
+            };
+
+            let averaged_pixel = average_rgb_pixels(pixel1, pixel2);
+            image.put_pixel(x / 2, y, averaged_pixel);
+        }
+    }
+}
+
+fn average_rgb_pixels(pixel1: &Rgb<u8>, pixel2: &Rgb<u8>) -> Rgb<u8> {
+    let r = (pixel1[0] as u16 + pixel2[0] as u16) / 2;
+    let g = (pixel1[1] as u16 + pixel2[1] as u16) / 2;
+    let b = (pixel1[2] as u16 + pixel2[2] as u16) / 2;
+
+    Rgb([r as u8, g as u8, b as u8])
+}
+
+
 fn main() {
     let mut cam = get_camera_data();
     let objects = get_objects_data();
@@ -123,6 +152,9 @@ fn main() {
     let mut scene = Scene::new(cam, objects, lights, plane, width_height.0, width_height.1);
     println!("P3\n{}\n{}\n{}", width_height.0, width_height.1, 255);
     scene.render();
+    // let mut image = image::open("result.ppm").expect("Falha ao abrir a imagem").to_rgb();
+    // average_pixels(&mut image);
+    // image.save("output.ppm").expect("Falha ao salvar a imagem");
 }
 
 fn parse_width_height(json: &Value) -> Result<(u32, u32), Box<dyn std::error::Error>> {

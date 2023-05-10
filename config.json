@@ -1,7 +1,7 @@
 {
     "camera": {
         "resolution": { "width": 800, "height": 800 },
-        "position": { "x": 0, "y": 0, "z": 1 },
+        "position": { "x": 0, "y": 0, "z": -1 },
         "rotation": { "x": -0.5, "y": -0.5, "z": -1.0},
         "fieldOfView": 72
     },
