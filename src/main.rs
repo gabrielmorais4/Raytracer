@@ -65,11 +65,7 @@ fn get_objects_data() -> Vec<Box<dyn Object>>
 
     let data: PrimitivesData = serde_json::from_str(&primitives_json_str).unwrap();
     let spheres2: Vec<Sphere> = data.spheres.into_iter().map(|sphere_data| {
-        Sphere {
-            center: Point3D { x: sphere_data.x, y: sphere_data.y, z: sphere_data.z },
-            radius: sphere_data.r,
-            color: Vector3D { x: sphere_data.color.r as f64, y: sphere_data.color.g as f64, z: sphere_data.color.b as f64 },
-        }
+        Sphere::new(Point3D { x: sphere_data.x, y: sphere_data.y, z: sphere_data.z }, sphere_data.r, Vector3D { x: sphere_data.color.r as f64, y: sphere_data.color.g as f64, z: sphere_data.color.b as f64 })
     }).collect();
     let planes2: Vec<Plane> = data.planes.into_iter().map(|plane_data| {
         Plane::new(plane_data.axis, plane_data.position, Vector3D { x: plane_data.color.r as f64, y: plane_data.color.g as f64, z: plane_data.color.b as f64 })
@@ -149,12 +145,7 @@ fn parse_camera(json: &Value) -> Result<Camera, Box<dyn std::error::Error>> {
     );
     let aspect_ratio = width as f64 / height as f64;
 
-    let camera = Camera {
-        origin,
-        screen,
-        fov,
-        aspect_ratio,
-    };
+    let camera = Camera::new(origin, fov, aspect_ratio);
 
     Ok(camera)
 }
