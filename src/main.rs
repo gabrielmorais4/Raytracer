@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use math::{Point3D, Vector3D};
 use std::env;
 
-use object::{Object, Sphere, Plane};
+use object::{Object, Sphere, Plane, Cylinder};
 
 use light::{DirectionalLight};
 
@@ -91,7 +91,8 @@ fn get_height_width_data() -> (u32, u32)
 
 fn main() {
     let mut cam = get_camera_data();
-    let objects = get_objects_data();
+    let mut objects = get_objects_data();
+    objects.push(Box::new(Cylinder::new(Point3D::new(-0.2, 0.2, -1.0), 0.2, "Y", Vector3D::new(255.0, 255.0, 0.0))));
     let width_height = get_height_width_data();
     cam.aspect_ratio = width_height.0 as f64 / width_height.1 as f64;
     let light: Box<PointLight> = Box::new(PointLight::new(Point3D::new(400.0, 100.0, 500.0), Vector3D::new(255.0, 255.0, 255.0), 1.0));

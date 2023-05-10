@@ -181,3 +181,69 @@ impl Object for Plane {
         self.color
     }
 }
+
+#[derive(Copy, Clone, Debug)]
+pub struct Cylinder {
+    pub position: Point3D,
+    pub radius: f64,
+    pub color: Vector3D,
+}
+
+impl Cylinder {
+    pub fn new(position: Point3D, radius: f64, axis: &str, color: Vector3D) -> Cylinder {
+        let position_value = match axis {
+            "X" => position.x,
+            "Y" => position.y,
+            "Z" => position.z,
+            _ => panic!("Invalid axis value. Must be X, Y, or Z"),
+        };
+        Cylinder {
+            position: position,
+            radius: radius,
+            color: color,
+        }
+    }
+}
+
+impl Object for Cylinder {
+    fn hits(&self, ray: Ray) -> Option<Point3D> {
+        let oc = ray.origin - self.position;
+        let a = ray.direction.x.powi(2) + ray.direction.z.powi(2);
+        let b = 2.0 * (oc.x * ray.direction.x + oc.z * ray.direction.z);
+        let c = oc.x.powi(2) + oc.z.powi(2) - self.radius.powi(2);
+        let discriminant = b.powi(2) - 4.0 * a * c;
+        if discriminant < 0.0 {
+            return None;
+        }
+        let sqrt_discriminant = discriminant.sqrt();
+        let t1 = (-b - sqrt_discriminant) / (2.0 * a);
+        let t2 = (-b + sqrt_discriminant) / (2.0 * a);
+        let t = if t1 < 0.0 { t2 } else { t1 };
+        let hit_point = ray.origin + ray.direction * t;
+        Some(hit_point)
+    }
+
+    fn surface_normal(&self, hit_point: &Point3D) -> Vector3D {
+        let y = hit_point.y;
+        let normal = Vector3D::new(hit_point.x - self.position.x, 0.0, hit_point.z - self.position.z).normalize();
+        if y < self.position.y + 1.0 {
+            return normal;
+        }
+        normal * -1.0
+    }
+
+    fn get_center(&self) -> Point3D {
+        self.position + Vector3D::new(0.0, 0.5, 0.0)
+    }
+
+    fn get_color(&self) -> Vector3D {
+        self.color
+    }
+
+    fn get_albedo(&self, hit_point: &Point3D, light_dir: &Vector3D) -> Vector3D {
+        let radius_sq = self.radius.powi(2);
+        let distance_sq = light_dir.length();
+        let factor = 4.0 * std::f64::consts::PI * radius_sq / distance_sq;
+        self.color * factor
+    }
+}

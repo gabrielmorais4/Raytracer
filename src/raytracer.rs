@@ -163,13 +163,13 @@ impl Scene {
                 }
                 if (multiple_hit > 1) {
                     let mut index = self.find_greater_z(&hitting_points);
-                    hit_color = Self::compute_lighting_directional(hitting_shapes[index], &self.lights, &hitting_points[index], &r);
-                    // hit_color = hitting_shapes[index].get_color();
+                    // hit_color = Self::compute_lighting_directional(hitting_shapes[index], &self.lights, &hitting_points[index], &r);
+                    hit_color = hitting_shapes[index].get_color();
                     Self::write_color(hit_color);
                 }
                 if (multiple_hit == 1) {
-                    hit_color = Self::compute_lighting_directional(hitting_shapes[0], &self.lights, &hitting_points[0], &r);
-                    // hit_color = hitting_shapes[0].get_color();
+                    // hit_color = Self::compute_lighting_directional(hitting_shapes[0], &self.lights, &hitting_points[0], &r);
+                    hit_color = hitting_shapes[0].get_color();
                     Self::write_color(hit_color);
                 }
             }
