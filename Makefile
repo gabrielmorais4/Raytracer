@@ -20,4 +20,8 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 
+raytracer:
+	cargo build
+	mv ./target/debug/$(NAME) .
+
 re:	fclean all
