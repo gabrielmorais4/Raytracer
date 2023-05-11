@@ -1,16 +1,22 @@
-use crate::light::{Light, DirectionalLight};
+use std::fs::OpenOptions;
+use std::io::Write;
+
+use crate::light::{DirectionalLight, Light};
 use crate::math::{Point3D, Vector3D};
-use crate::object::{Object, Sphere, Plane, HitResult};
-use serde::{Serialize, Deserialize};
+use crate::object::{HitResult, Object, Plane, Sphere};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub struct Ray {
     pub origin: Point3D,
-    pub direction: Vector3D
+    pub direction: Vector3D,
 }
 impl Default for Ray {
     fn default() -> Ray {
-        Ray { origin: Point3D::default(), direction: Vector3D::default() }
+        Ray {
+            origin: Point3D::default(),
+            direction: Vector3D::default(),
+        }
     }
 }
 impl Ray {
@@ -18,7 +24,13 @@ impl Ray {
         Ray { origin, direction }
     }
     pub fn from(other: Ray) -> Ray {
-        std::mem::replace(&mut Ray {origin: Point3D::default(), direction: Vector3D::default()}, other)
+        std::mem::replace(
+            &mut Ray {
+                origin: Point3D::default(),
+                direction: Vector3D::default(),
+            },
+            other,
+        )
     }
 }
 
@@ -26,16 +38,24 @@ impl Ray {
 pub struct Rectangle3D {
     origin: Point3D,
     bottom_side: Vector3D,
-    left_side: Vector3D
+    left_side: Vector3D,
 }
 impl Default for Rectangle3D {
     fn default() -> Rectangle3D {
-        Rectangle3D { origin: Point3D::new(-1.0, -1.0, -1.0), bottom_side: Vector3D::new(1.0, 0.0, 0.0), left_side: Vector3D::new(0.0, 1.0, 0.0) }
+        Rectangle3D {
+            origin: Point3D::new(-1.0, -1.0, -1.0),
+            bottom_side: Vector3D::new(1.0, 0.0, 0.0),
+            left_side: Vector3D::new(0.0, 1.0, 0.0),
+        }
     }
 }
 impl Rectangle3D {
     pub fn new(origin: Point3D, bottom_side: Vector3D, left_side: Vector3D) -> Rectangle3D {
-        Rectangle3D { origin, bottom_side, left_side }
+        Rectangle3D {
+            origin,
+            bottom_side,
+            left_side,
+        }
     }
     pub fn point_at(&self, u: f64, v: f64) -> Point3D {
         let p0 = self.origin;
@@ -53,16 +73,29 @@ pub struct Camera {
 }
 impl Default for Camera {
     fn default() -> Camera {
-        Camera { origin: Point3D::default(), screen: Rectangle3D::default(), fov: 90.0, aspect_ratio: 16.0 / 9.0 }
+        Camera {
+            origin: Point3D::default(),
+            screen: Rectangle3D::default(),
+            fov: 90.0,
+            aspect_ratio: 16.0 / 9.0,
+        }
     }
 }
 impl Camera {
     pub fn new(origin: Point3D, fov: f64, aspect_ratio: f64) -> Camera {
         let screen = Self::calculate_screen(origin, fov, aspect_ratio);
-        Camera { origin, screen, fov, aspect_ratio }
+        Camera {
+            origin,
+            screen,
+            fov,
+            aspect_ratio,
+        }
     }
     pub fn ray(&self, u: f64, v: f64) -> Ray {
-        Ray::new(self.origin, (self.screen.point_at(u, v) - self.origin).normalize())
+        Ray::new(
+            self.origin,
+            (self.screen.point_at(u, v) - self.origin).normalize(),
+        )
     }
     pub fn calculate_screen(origin: Point3D, fov: f64, aspect_ratio: f64) -> Rectangle3D {
         let half_height = (fov.to_radians() / 2.0).tan();
@@ -85,21 +118,42 @@ impl Camera {
 pub struct Scene {
     pub width: u32,
     pub height: u32,
-    pub camera: Camera, // camera of the scene
+    pub camera: Camera,                // camera of the scene
     pub objects: Vec<Box<dyn Object>>, // list of Objects
-    pub lights: Vec<Box<dyn Light>>, // list of Lights
-    pub plane: Plane // plane of the scene
+    pub lights: Vec<Box<dyn Light>>,   // list of Lights
+    pub plane: Plane,                  // plane of the scene
 }
 
 impl Default for Scene {
     fn default() -> Scene {
-        Scene { camera: Camera::default(), objects: Vec::new(), lights: Vec::new(), plane: Plane::default(), width: 0, height: 0 }
+        Scene {
+            camera: Camera::default(),
+            objects: Vec::new(),
+            lights: Vec::new(),
+            plane: Plane::default(),
+            width: 0,
+            height: 0,
+        }
     }
 }
 
 impl Scene {
-    pub fn new(camera: Camera, objects: Vec<Box<dyn Object>>, lights: Vec<Box<dyn Light>>, plane: Plane, width: u32, height: u32) -> Scene {
-        Scene { camera, objects, lights, plane, width, height }
+    pub fn new(
+        camera: Camera,
+        objects: Vec<Box<dyn Object>>,
+        lights: Vec<Box<dyn Light>>,
+        plane: Plane,
+        width: u32,
+        height: u32,
+    ) -> Scene {
+        Scene {
+            camera,
+            objects,
+            lights,
+            plane,
+            width,
+            height,
+        }
     }
     pub fn add_object(&mut self, object: Box<dyn Object>) {
         self.objects.push(object);
@@ -117,15 +171,32 @@ impl Scene {
     fn write_color(color: Vector3D) {
         let color = color.get_color();
         println!("{} {} {}", color.0, color.1, color.2);
+        let mut data_file = OpenOptions::new()
+            .append(true)
+            .open("data.ppm")
+            .expect("cannot open file");
+        data_file
+            .write_all(format!("{} {} {}\n", color.0, color.1, color.2).as_bytes())
+            .expect("cannot write to file");
     }
-    pub fn compute_lighting_directional(object: &Box<dyn Object>, light: &Box<dyn Light>, hit_point: &Point3D, ray: &Ray, objects: &Vec<Box<dyn Object>>) -> Vector3D {
+    pub fn compute_lighting_directional(
+        object: &Box<dyn Object>,
+        light: &Box<dyn Light>,
+        hit_point: &Point3D,
+        ray: &Ray,
+        objects: &Vec<Box<dyn Object>>,
+    ) -> Vector3D {
         let surface_normal = object.surface_normal(hit_point);
         let direction_to_light = light.get_direction().normalize();
-        let light_power = (surface_normal.dot(&direction_to_light) as f64).max(0.0) * light.get_intensity();
+        let light_power =
+            (surface_normal.dot(&direction_to_light) as f64).max(0.0) * light.get_intensity();
         let mut color = Vector3D::new(0.0, 0.0, 0.0);
 
         // Test d'intersection entre le point d'intersection et les autres objets de la scène
-        let shadow_ray = Ray::new((hit_point.clone() + (surface_normal)), direction_to_light.clone());
+        let shadow_ray = Ray::new(
+            (hit_point.clone() + (surface_normal)),
+            direction_to_light.clone(),
+        );
         let mut is_shadowed = false;
         for other_object in objects.iter() {
             if (object.get_center() != other_object.get_center()) {
@@ -138,15 +209,25 @@ impl Scene {
 
         if is_shadowed {
             // Lumière obstruée, appliquer une couleur plus sombre
-            color = (object.get_color().clone() * light.get_color().clone()).normalize() * light_power;
-            let mut shadow_color = Vector3D::new(color.x * 255 as f64, color.y * 255 as f64, color.z * 255 as f64);
+            color =
+                (object.get_color().clone() * light.get_color().clone()).normalize() * light_power;
+            let mut shadow_color = Vector3D::new(
+                color.x * 255 as f64,
+                color.y * 255 as f64,
+                color.z * 255 as f64,
+            );
             shadow_color *= 0.5;
             return shadow_color;
         } else {
             // Pas d'obstruction, calculer la couleur normale
-            color = (object.get_color().clone() * light.get_color().clone()).normalize() * light_power;
+            color =
+                (object.get_color().clone() * light.get_color().clone()).normalize() * light_power;
         }
-        let new_color = Vector3D::new(color.x * 255 as f64, color.y * 255 as f64, color.z * 255 as f64);
+        let new_color = Vector3D::new(
+            color.x * 255 as f64,
+            color.y * 255 as f64,
+            color.z * 255 as f64,
+        );
 
         new_color
     }
@@ -165,7 +246,8 @@ impl Scene {
         j
     }
     pub fn render(&mut self) {
-        self.objects.sort_by(|a, b| b.get_center().z.partial_cmp(&a.get_center().z).unwrap());
+        self.objects
+            .sort_by(|a, b| b.get_center().z.partial_cmp(&a.get_center().z).unwrap());
         for y in (0..self.height).rev() {
             for x in 0..self.width {
                 let u = x as f64 / (self.width - 1) as f64;
@@ -193,7 +275,7 @@ impl Scene {
                             light,
                             &hitting_points[index],
                             &r,
-                            &self.objects
+                            &self.objects,
                         );
                     }
                     Self::write_color(hit_color);
@@ -204,7 +286,7 @@ impl Scene {
                             light,
                             &hitting_points[0],
                             &r,
-                            &self.objects
+                            &self.objects,
                         );
                     }
                     Self::write_color(hit_color);

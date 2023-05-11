@@ -1,19 +1,20 @@
-mod raytracer;
+mod light;
 mod math;
 mod object;
-mod light;
-use std::fs::File;
-use std::io::Read;
-use serde_json::Value;
-use serde::{Deserialize, Serialize};
-use math::{Point3D, Vector3D};
-use std::env;
+mod raytracer;
 use image::{GenericImageView, ImageBuffer, Rgb};
+use math::{Point3D, Vector3D};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::env;
+use std::fs::{self, File, OpenOptions};
+use std::io::{Read, Write};
+use std::thread::sleep_ms;
 
-use object::{Object, Sphere, Plane, Cylinder};
-use light::{Light, PointLight, DirectionalLight};
+use light::{DirectionalLight, Light, PointLight};
+use object::{Cylinder, Object, Plane, Sphere};
 
-use crate::{raytracer::{Camera, Rectangle3D, Scene}};
+use crate::raytracer::{Camera, Rectangle3D, Scene};
 #[derive(Serialize, Deserialize, Debug)]
 struct Color {
     r: u8,
@@ -35,55 +36,213 @@ struct PlaneData {
     position: i32,
     color: Color,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+struct CylinderData {
+    x: f64,
+    y: f64,
+    z: f64,
+    radius: f64,
+    axis: String,
+    color: Color,
+}
 #[derive(Debug, Deserialize)]
 struct PrimitivesData {
-    spheres: Vec<SphereData>,
+    spheres: Option<Vec<SphereData>>,
     planes: Option<Vec<PlaneData>>,
+    cylinders: Option<Vec<CylinderData>>,
 }
 
-fn get_camera_data() -> Camera
-{
+#[derive(Debug, Deserialize)]
+struct LightData {
+    point: Option<Vec<PointLightData>>,
+    directional: Option<Vec<DirectionalLightData>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PointLightData {
+    x: f64,
+    y: f64,
+    z: f64,
+    color: Color,
+    intensity: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct DirectionalLightData {
+    x: f64,
+    y: f64,
+    z: f64,
+    color: Color,
+    intensity: f64,
+}
+
+fn get_camera_data() -> Camera {
     let args: Vec<String> = env::args().collect();
     let mut file = File::open(args.get(1).expect("error")).expect("Failed to open file");
     let mut contents = String::new();
-    file.read_to_string(&mut contents).expect("Failed to read file");
+    file.read_to_string(&mut contents)
+        .expect("Failed to read file");
     let json: Value = serde_json::from_str(&contents).expect("err");
     let cam2 = parse_camera(&json);
     let cam = cam2.unwrap();
     return cam;
 }
 
-fn get_objects_data() -> Vec<Box<dyn Object>>
-{
+fn get_objects_data() -> Vec<Box<dyn Object>> {
     let args: Vec<String> = env::args().collect();
     let mut file = File::open(args.get(1).expect("error")).expect("Failed to open file");
     let mut contents = String::new();
-    file.read_to_string(&mut contents).expect("Failed to read file");
+    file.read_to_string(&mut contents)
+        .expect("Failed to read file");
 
     let json_data: serde_json::Value = serde_json::from_str(&contents).expect("err");
     let primitives_json_str = json_data["primitives"].to_string();
 
     let data: PrimitivesData = serde_json::from_str(&primitives_json_str).unwrap();
-    let spheres2: Vec<Sphere> = data.spheres.into_iter().map(|sphere_data| {
-        Sphere::new(Point3D { x: sphere_data.x, y: sphere_data.y, z: sphere_data.z }, sphere_data.r, Vector3D { x: sphere_data.color.r as f64, y: sphere_data.color.g as f64, z: sphere_data.color.b as f64 })
-    }).collect();
-    let planes2: Vec<Plane> = data.planes.unwrap_or(Vec::new()).into_iter().map(|plane_data| {
-        Plane::new(plane_data.axis, plane_data.position, Vector3D { x: plane_data.color.r as f64, y: plane_data.color.g as f64, z: plane_data.color.b as f64 })
-    }).collect();
+    let spheres2: Vec<Sphere> = data
+        .spheres
+        .unwrap_or(Vec::new())
+        .into_iter()
+        .map(|sphere_data| {
+            Sphere::new(
+                Point3D {
+                    x: sphere_data.x,
+                    y: sphere_data.y,
+                    z: sphere_data.z,
+                },
+                sphere_data.r,
+                Vector3D {
+                    x: sphere_data.color.r as f64,
+                    y: sphere_data.color.g as f64,
+                    z: sphere_data.color.b as f64,
+                },
+            )
+        })
+        .collect();
+    let planes2: Vec<Plane> = data
+        .planes
+        .unwrap_or(Vec::new())
+        .into_iter()
+        .map(|plane_data| {
+            Plane::new(
+                plane_data.axis,
+                plane_data.position,
+                Vector3D {
+                    x: plane_data.color.r as f64,
+                    y: plane_data.color.g as f64,
+                    z: plane_data.color.b as f64,
+                },
+            )
+        })
+        .collect();
+    let cylinders2: Vec<Cylinder> = data
+        .cylinders
+        .unwrap_or(Vec::new())
+        .into_iter()
+        .map(|cylinder_data| {
+            Cylinder::new(
+                Point3D {
+                    x: cylinder_data.x,
+                    y: cylinder_data.y,
+                    z: cylinder_data.z,
+                },
+                cylinder_data.radius,
+                cylinder_data.axis.as_str(),
+                Vector3D {
+                    x: cylinder_data.color.r as f64,
+                    y: cylinder_data.color.g as f64,
+                    z: cylinder_data.color.b as f64,
+                },
+            )
+        })
+        .collect();
     let objects: Vec<Box<dyn Object>> = planes2
-    .into_iter()
-    .map(|plane| Box::new(plane) as Box<dyn Object>)
-    .chain(spheres2.into_iter().map(|sphere| Box::new(sphere) as Box<dyn Object>))
-    .collect();
+        .into_iter()
+        .map(|plane| Box::new(plane) as Box<dyn Object>)
+        .chain(
+            spheres2
+                .into_iter()
+                .map(|sphere| Box::new(sphere) as Box<dyn Object>),
+        )
+        .chain(
+            cylinders2
+                .into_iter()
+                .map(|cylinder| Box::new(cylinder) as Box<dyn Object>),
+        )
+        .collect();
     return objects;
 }
 
-fn get_height_width_data() -> (u32, u32)
-{
+fn get_lights_data() -> Vec<Box<dyn Light>> {
     let args: Vec<String> = env::args().collect();
     let mut file = File::open(args.get(1).expect("error")).expect("Failed to open file");
     let mut contents = String::new();
-    file.read_to_string(&mut contents).expect("Failed to read file");
+    file.read_to_string(&mut contents)
+        .expect("Failed to read file");
+
+    let json_data: serde_json::Value = serde_json::from_str(&contents).expect("err");
+    let primitives_json_str = json_data["lights"].to_string();
+
+    let data: LightData = serde_json::from_str(&primitives_json_str).unwrap();
+    let point: Vec<PointLight> = data
+        .point
+        .unwrap_or(Vec::new())
+        .into_iter()
+        .map(|point_data| {
+            PointLight::new(
+                Point3D {
+                    x: point_data.x,
+                    y: point_data.y,
+                    z: point_data.z,
+                },
+                Vector3D {
+                    x: point_data.color.r as f64,
+                    y: point_data.color.g as f64,
+                    z: point_data.color.b as f64,
+                },
+                point_data.intensity,
+            )
+        })
+        .collect();
+    let direct: Vec<DirectionalLight> = data
+        .directional
+        .unwrap_or(Vec::new())
+        .into_iter()
+        .map(|direct_data| {
+            DirectionalLight::new(
+                Vector3D {
+                    x: direct_data.x,
+                    y: direct_data.y,
+                    z: direct_data.z,
+                },
+                Vector3D {
+                    x: direct_data.color.r as f64,
+                    y: direct_data.color.g as f64,
+                    z: direct_data.color.b as f64,
+                },
+                direct_data.intensity,
+            )
+        })
+        .collect();
+    let objects: Vec<Box<dyn Light>> = point
+        .into_iter()
+        .map(|plane| Box::new(plane) as Box<dyn Light>)
+        .chain(
+            direct
+                .into_iter()
+                .map(|sphere| Box::new(sphere) as Box<dyn Light>),
+        )
+        .collect();
+    return objects;
+}
+
+fn get_height_width_data() -> (u32, u32) {
+    let args: Vec<String> = env::args().collect();
+    let mut file = File::open(args.get(1).expect("error")).expect("Failed to open file");
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)
+        .expect("Failed to read file");
     let json: Value = serde_json::from_str(&contents).expect("err");
     let width_height = parse_width_height(&json).expect("error");
     return width_height;
@@ -113,7 +272,9 @@ fn get_height_width_data() -> (u32, u32)
 
 fn apply_anti_aliasing(file_path: &str) {
     // Abra o arquivo temporário
-    let image = image::open(file_path).expect("Falha ao abrir a imagem temporária").to_rgb();
+    let image = image::open(file_path)
+        .expect("Falha ao abrir a imagem temporária")
+        .to_rgb();
     let width = image.width();
     let height = image.height();
 
@@ -134,7 +295,9 @@ fn apply_anti_aliasing(file_path: &str) {
     }
 
     // Salve a imagem resultante com anti-aliasing em um novo arquivo PPM
-    anti_aliasing_image.save("antialising.ppm").expect("Falha ao salvar a imagem com anti-aliasing");
+    anti_aliasing_image
+        .save("antialising.ppm")
+        .expect("Falha ao salvar a imagem com anti-aliasing");
 }
 
 fn average_rgb_pixels(
@@ -151,22 +314,27 @@ fn average_rgb_pixels(
 }
 
 fn main() {
+    File::create("data.ppm").expect("cannot create file");
     let mut cam = get_camera_data();
     let mut objects: Vec<Box<dyn Object>> = get_objects_data();
-    objects.push(Box::new(Cylinder::new(Point3D::new(-0.2, 0.2, -1.0), 0.2, "Y", Vector3D::new(255.0, 255.0, 0.0))));
     let width_height: (u32, u32) = get_height_width_data();
     let width = width_height.0;
     let height = width_height.1;
     cam.aspect_ratio = width as f64 / height as f64;
-    let lights: Vec<Box<dyn Light>> = vec![
-        Box::new(PointLight::new(Point3D::new(400.0, 100.0, 500.0), Vector3D::new(255.0, 255.0, 255.0), 1.0)),
-        // Box::new(DirectionalLight::new(Vector3D::new(0.0, 0.0, 1.0), Vector3D::new(255.0, 255.0, 255.0), 1.0)),
-    ];
+    let lights = get_lights_data();
     let plane = Plane::default();
     let mut scene = Scene::new(cam, objects, lights, plane, width, height);
     println!("P3\n{}\n{}\n{}", width_height.0, width_height.1, 255);
+    let mut data_file = OpenOptions::new()
+        .append(true)
+        .open("data.ppm")
+        .expect("cannot open file");
+    data_file
+        .write_all(format!("P3\n{}\n{}\n{}\n", width_height.0, width_height.1, 255).as_bytes())
+        .expect("cannot write to file");
     scene.render();
-    apply_anti_aliasing("temp.ppm");
+    apply_anti_aliasing("data.ppm");
+    fs::remove_file("data.ppm").expect("could not remove file");
 }
 
 fn parse_width_height(json: &Value) -> Result<(u32, u32), Box<dyn std::error::Error>> {
@@ -206,7 +374,7 @@ fn parse_camera(json: &Value) -> Result<Camera, Box<dyn std::error::Error>> {
         .ok_or_else(|| "Camera rotation not found in JSON")?;
     let fov = camera_json["fieldOfView"].as_f64().unwrap_or_default();
 
-    let screen: Rectangle3D =         Rectangle3D::new(
+    let screen: Rectangle3D = Rectangle3D::new(
         Point3D::new(-0.5, -0.5, -1.0),
         Vector3D::new(1.0, 0.0, 0.0),
         Vector3D::new(0.0, 1.0, 0.0),
@@ -217,4 +385,3 @@ fn parse_camera(json: &Value) -> Result<Camera, Box<dyn std::error::Error>> {
 
     Ok(camera)
 }
-
