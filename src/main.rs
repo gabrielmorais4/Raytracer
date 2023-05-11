@@ -2,7 +2,7 @@ mod light;
 mod math;
 mod object;
 mod raytracer;
-use image::{GenericImageView, ImageBuffer, Rgb};
+use image::{ImageBuffer, Rgb};
 use math::{Point3D, Vector3D};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -11,7 +11,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::thread::sleep_ms;
 
-use light::{DirectionalLight, Light, PointLight};
+use light::{DirectionalLight, Light, PointLight, AmbientLight};
 use object::{Cylinder, Object, Plane, Sphere};
 
 use crate::raytracer::{Camera, Rectangle3D, Scene};
@@ -315,17 +315,33 @@ fn average_rgb_pixels(
 
 fn main() {
     File::create("data.ppm").expect("cannot create file");
-    let mut cam = get_camera_data();
+    let mut cam: Camera = get_camera_data();
     let mut objects: Vec<Box<dyn Object>> = get_objects_data();
     let width_height: (u32, u32) = get_height_width_data();
-    let width = width_height.0;
-    let height = width_height.1;
+    let width: u32 = width_height.0;
+    let height: u32 = width_height.1;
     cam.aspect_ratio = width as f64 / height as f64;
-    let lights = get_lights_data();
-    let plane = Plane::default();
-    let mut scene = Scene::new(cam, objects, lights, plane, width, height);
+    let lights: Vec<Box<dyn Light>> = get_lights_data();
+    // let lights: Vec<Box<dyn Light>> = vec![
+        // Box::new(PointLight::new(
+        //     Point3D::new(400.0, 100.0, 500.0),
+        //     Vector3D::new(255.0, 255.0, 255.0),
+        //     1.0,
+        // )),
+        // Box::new(DirectionalLight::new(
+        //     Vector3D::new(0.0, 0.0, 1.0),
+        //     Vector3D::new(255.0, 255.0, 255.0),
+        //     1.0,
+        // ))
+    //     Box::new(AmbientLight::new(
+    //         Vector3D::new(255.0, 255.0, 255.0),
+    //         1.0,
+    //     )),
+    // ];
+    let plane: Plane = Plane::default();
+    let mut scene: Scene = Scene::new(cam, objects, lights, plane, width, height);
     println!("P3\n{}\n{}\n{}", width_height.0, width_height.1, 255);
-    let mut data_file = OpenOptions::new()
+    let mut data_file: File = OpenOptions::new()
         .append(true)
         .open("data.ppm")
         .expect("cannot open file");

@@ -63,3 +63,28 @@ impl Light for PointLight {
         self.intensity
     }
 }
+
+pub struct AmbientLight {
+    pub color: Vector3D,
+    pub intensity: f64,
+}
+
+impl AmbientLight {
+    pub fn new(color: Vector3D, intensity: f64) -> AmbientLight {
+        AmbientLight { color, intensity }
+    }
+}
+
+impl Light for AmbientLight {
+    fn get_direction(&self) -> Vector3D {
+        Vector3D::new(0.0, 0.0, 1.0)
+    }
+
+    fn get_color(&self) -> Vector3D {
+        self.color
+    }
+
+    fn get_intensity(&self) -> f64 {
+        self.intensity
+    }
+}

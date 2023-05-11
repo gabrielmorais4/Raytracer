@@ -189,17 +189,14 @@ impl Scene {
         let surface_normal = object.surface_normal(hit_point);
         let direction_to_light = light.get_direction().normalize();
         let light_power =
-            (surface_normal.dot(&direction_to_light) as f64).max(0.0) * light.get_intensity();
-        let mut color = Vector3D::new(0.0, 0.0, 0.0);
+            (surface_normal.dot(&direction_to_light)).max(0.0) * light.get_intensity();
+        let mut color: Vector3D = Vector3D::new(0.0, 0.0, 0.0);
 
-        // Test d'intersection entre le point d'intersection et les autres objets de la scène
-        let shadow_ray = Ray::new(
-            (hit_point.clone() + (surface_normal)),
-            direction_to_light.clone(),
-        );
+        let shadow_ray = Ray::new(hit_point.clone() + (surface_normal * 0.001), direction_to_light);
+
         let mut is_shadowed = false;
         for other_object in objects.iter() {
-            if (object.get_center() != other_object.get_center()) {
+            if object.get_center() != other_object.get_center() {
                 if let Some(_) = other_object.hits(shadow_ray) {
                     is_shadowed = true;
                     break;
@@ -208,26 +205,15 @@ impl Scene {
         }
 
         if is_shadowed {
-            // Lumière obstruée, appliquer une couleur plus sombre
-            color =
-                (object.get_color().clone() * light.get_color().clone()).normalize() * light_power;
-            let mut shadow_color = Vector3D::new(
-                color.x * 255 as f64,
-                color.y * 255 as f64,
-                color.z * 255 as f64,
-            );
+            color = (object.get_color() * light.get_color()).normalize() * light_power;
+            let mut shadow_color: Vector3D = Vector3D::new(color.x * 255.0, color.y * 255.0, color.z * 255.0);
             shadow_color *= 0.5;
             return shadow_color;
         } else {
-            // Pas d'obstruction, calculer la couleur normale
-            color =
-                (object.get_color().clone() * light.get_color().clone()).normalize() * light_power;
+            color = (object.get_color() * light.get_color()).normalize() * light_power;
         }
-        let new_color = Vector3D::new(
-            color.x * 255 as f64,
-            color.y * 255 as f64,
-            color.z * 255 as f64,
-        );
+
+        let new_color: Vector3D = Vector3D::new(color.x * 255.0, color.y * 255.0, color.z * 255.0);
 
         new_color
     }
