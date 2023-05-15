@@ -196,7 +196,7 @@ impl Cylinder {
             "X" => position.x,
             "Y" => position.y,
             "Z" => position.z,
-            _ => panic!("Invalid axis value. Must be X, Y, or Z"),
+            _ => position.x,
         };
         Cylinder {
             position: position,
