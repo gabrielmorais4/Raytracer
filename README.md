@@ -8,7 +8,13 @@ A raytracer is a 3D rendering algorithm that differs significantly from the rend
 ![Render 2](https://github.com/gabrielmorais4/Raytracer/blob/main/screenshots/result2.png)
 ![Render 3](https://github.com/gabrielmorais4/Raytracer/blob/main/screenshots/result3.png)
 
+## Compilation and Installation
+```
+make
+```
+
 ## Usage
-- use "make" command
-- "./raytracer scene1.json > result.ppm"
+```
+./raytracer <file_name.json> > result.ppm
+```
 The *.json file is where the scene configuration is made, you can change the geometric shapes, their positions, the light incidence and position, etc... 
