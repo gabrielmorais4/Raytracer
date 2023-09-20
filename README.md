@@ -1,4 +1,4 @@
 # Raytracer
-![Screenshot](antialising.ppm)
-![Screenshot](antialising2.ppm)
-![Screenshot](antialising3.ppm)
+![Render 1](antialising.ppm)
+![Render 2](antialising2.ppm)
+![Render 3](antialising3.ppm)
